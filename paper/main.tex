@@ -1,0 +1,344 @@
+\documentclass[10pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{neurips_style}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\graphicspath{{figures/}}
+
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{Previsão de Resultados de Lutas do UFC com Aprendizagem de Máquina:\\
+um Estudo Comparativo de Modelos}
+
+\author{Enzo Lozano \quad Alan Carneiro \quad Marcelo Marques\\
+  Departamento de Computação --- Universidade Federal do Ceará\\
+  Aprendizagem de Máquina (2026.1) --- Prof.\ César Lincoln C.\ Mattos}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+O Ultimate Fighting Championship (UFC) é a principal organização de artes
+marciais mistas (MMA) do mundo, e prever o vencedor de uma luta é uma tarefa
+notoriamente difícil, dada a natureza explosiva do esporte. Neste trabalho
+formulamos a previsão do vencedor como um problema de classificação binária
+supervisionada e comparamos cinco modelos de aprendizagem de máquina ---
+Regressão Logística, Random Forest, XGBoost, Máquinas de Vetores de Suporte
+(SVM) e uma Rede Neural (MLP) --- sobre dados reais de \textbf{7.827 lutas}
+disputadas entre 1993 e 2024, coletadas do \texttt{ufcstats.com}. A partir dos
+atributos pré-luta dos atletas (idade, altura, envergadura, cartel, número de
+lutas, estilo de luta e taxas de vitória por nocaute, finalização e decisão),
+construímos uma representação \emph{diferencial} e \emph{antissimétrica} entre
+os dois lutadores, e adotamos uma avaliação por divisão temporal para simular o
+uso real do sistema. O melhor modelo (Random Forest) atingiu
+\textbf{60,2\% de acurácia} e \textbf{AUC-ROC de 0,637} no conjunto de teste
+(lutas de 2021--2024), superando com folga os baselines, mas confirmando o
+baixo teto de previsibilidade do esporte reportado na literatura. A análise de
+importância indica que a \emph{diferença de idade} e a \emph{diferença de
+derrotas} são os fatores mais determinantes.
+\end{abstract}
+
+\section{Introdução}
+O Ultimate Fighting Championship (UFC) popularizou as artes marciais mistas
+(MMA) e movimenta hoje uma indústria bilionária de eventos e apostas
+esportivas. Diferentemente de esportes coletivos, uma luta de MMA pode ser
+decidida em segundos por um único golpe, o que torna o resultado altamente
+incerto e atrai grande interesse na construção de modelos preditivos.
+
+Este trabalho investiga, de forma sistemática, \emph{em que medida é possível
+prever o vencedor de uma luta do UFC a partir de estatísticas conhecidas antes
+do combate}. Trata-se de um problema de \textbf{classificação binária}: dadas
+as características de dois lutadores, o modelo deve indicar qual deles vence.
+Como referência metodológica e fonte de dados utilizamos o projeto público
+\emph{Punch Prophecy}~\cite{punchprophecy}, que coleta estatísticas do
+\texttt{ufcstats.com}~\cite{ufcstats}.
+
+Os objetivos do trabalho são: (i) montar um conjunto de dados real e limpo de
+lutas do UFC; (ii) propor uma representação diferencial e antissimétrica que
+elimine o viés de qual lutador é apresentado primeiro; (iii) treinar e comparar
+cinco modelos de aprendizagem de máquina sob uma metodologia rigorosa de
+avaliação temporal; e (iv) interpretar quais atributos mais influenciam o
+resultado. A motivação é tanto prática (apoio a análises esportivas e de
+apostas) quanto científica (quantificar o limite de previsibilidade do MMA).
+
+\section{Fundamentação Teórica}
+
+\subsection{Descrição técnica do problema}
+Seja uma luta entre um lutador $A$ e um oponente $B$. Associamos a cada atleta
+um vetor de atributos pré-luta e definimos a variável-alvo $y \in \{0,1\}$,
+com $y=1$ se $A$ vence e $y=0$ caso contrário. O objetivo é aprender uma função
+$f(\mathbf{x}) \approx P(y=1 \mid \mathbf{x})$, onde $\mathbf{x}$ codifica a
+\emph{diferença} entre os atributos de $A$ e $B$. Essa formulação diferencial é
+natural: o que importa para o resultado é a vantagem relativa de um lutador
+sobre o outro, e não os valores absolutos.
+
+\subsection{Descrição dos dados}
+Utilizamos dois arquivos do projeto \emph{Punch Prophecy}: \texttt{ufc\_fights.csv},
+com uma linha por luta e estatísticas \emph{cumulativas pré-luta} de cada
+atleta, e \texttt{fighter\_stats.csv}, com atributos físicos por lutador
+(2.539 atletas). Após descartar empates e resultados anulados, restaram
+\textbf{7.827 lutas} válidas, disputadas entre 1993 e 2024.
+
+Para cada lutador foram considerados os atributos definidos pelo grupo, listados
+na Tabela~\ref{tab:atributos}. A saída do problema é o resultado da luta
+(vitória/derrota do lutador de referência).
+
+\begin{table}[t]
+\centering
+\caption{Atributos utilizados (medidos para cada lutador antes da luta).}
+\label{tab:atributos}
+\begin{tabular}{ll}
+\toprule
+Atributo & Descrição \\
+\midrule
+Idade & Idade do atleta na data da luta (anos) \\
+Altura & Altura (cm) \\
+Envergadura & Alcance dos braços (cm) \\
+Vitórias / Derrotas & Cartel acumulado no UFC \\
+Lutas totais & Número de lutas anteriores (vitórias + derrotas) \\
+Estilo de luta & \emph{Stance}: orthodox, southpaw, switch ou outro \\
+Taxa de nocaute & Fração das vitórias obtidas por KO/TKO \\
+Taxa de finalização & Fração das vitórias obtidas por finalização \\
+Taxa de decisão & Fração das vitórias obtidas por decisão dos juízes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Trabalhos similares}
+A previsão de resultados esportivos é um campo consolidado, e o MMA tem
+recebido atenção crescente. O projeto de referência \emph{Punch
+Prophecy}~\cite{punchprophecy} emprega regressão logística sobre estatísticas do
+\texttt{ufcstats.com} combinadas a odds de casas de apostas. De modo geral, a
+literatura e o mercado de apostas convergem para um teto de previsibilidade
+relativamente baixo: o favorito das casas vence tipicamente em torno de
+60--65\% das vezes, o que estabelece uma referência realista para qualquer
+modelo. Nosso trabalho se diferencia ao (i) comparar de forma controlada cinco
+famílias de modelos, (ii) adotar uma representação diferencial antissimétrica
+com aumento de dados por espelhamento, e (iii) usar divisão temporal estrita,
+evitando o vazamento de informação comum em avaliações por amostragem
+aleatória.
+
+\section{Metodologia}
+
+\subsection{Preparação dos dados}
+As colunas de idade, altura e envergadura do arquivo de lutas estavam
+armazenadas como texto, com marcadores \texttt{'unknown'} (e \texttt{'0'} para
+idade) indicando ausência; convertemos esses valores para \texttt{NaN}. Altura,
+envergadura e estilo de luta foram obtidos preferencialmente do
+\texttt{fighter\_stats.csv} (texto limpo, com 99,3\% de cobertura por nome),
+usando as colunas do arquivo de lutas apenas como reserva. Valores contínuos
+ainda ausentes (sobretudo envergadura) foram imputados pela mediana. O estilo de
+luta foi normalizado em quatro categorias (\emph{orthodox}, \emph{southpaw},
+\emph{switch} e \emph{outro}).
+
+\subsection{Engenharia de atributos e espelhamento}
+Cada luta foi representada pela \textbf{diferença} entre os atributos do lutador
+e do oponente ($\text{lutador} - \text{oponente}$). Para o estilo de luta,
+usamos a diferença de indicadores por categoria (por exemplo,
+$d\_stance\_southpaw = \mathbb{1}[\text{lutador southpaw}] -
+\mathbb{1}[\text{oponente southpaw}]$) e um indicador simétrico de
+\emph{estilos diferentes}. As taxas de vitória por método foram calculadas como
+a razão entre vitórias por aquele método e o total de vitórias. Ao todo, o
+modelo utiliza \textbf{14 atributos}.
+
+Como cada luta aparece uma única vez no conjunto (de um canto arbitrário), e a
+representação diferencial é \emph{antissimétrica}, aplicamos
+\textbf{espelhamento} no conjunto de treino: para cada luta criamos uma cópia
+com os cantos trocados, negando todas as features diferenciais e invertendo o
+rótulo. Isso (i) impõe ao modelo a simetria desejada
+($f(\mathbf{x}) = 1 - f(-\mathbf{x})$), (ii) elimina qualquer viés de ordem de
+apresentação e (iii) garante o balanceamento exato das classes.
+
+\subsection{Avaliação por divisão temporal}
+Para simular o uso real do sistema (prever eventos futuros) e evitar vazamento
+temporal, ordenamos as lutas por data e reservamos os \textbf{20\% mais
+recentes} para teste. O conjunto de treino contém 6.261 lutas (1993--2021), que
+após o espelhamento totalizam \textbf{12.522 exemplos} balanceados; o conjunto
+de teste contém \textbf{1.566 lutas} (2021--2024), sem espelhamento.
+
+\subsection{Modelos}
+Comparamos cinco modelos de aprendizagem supervisionada, cobrindo modelos
+lineares, baseados em árvores, baseados em margem e conexionistas:
+\textbf{Regressão Logística}~\cite{hastie2009elements},
+\textbf{Random Forest}~\cite{breiman2001random},
+\textbf{XGBoost}~\cite{chen2016xgboost},
+\textbf{SVM} com kernel RBF~\cite{cortes1995svm} e uma
+\textbf{Rede Neural} (MLP). Cada modelo foi encapsulado em um \emph{pipeline}
+com padronização das features (quando aplicável) para evitar vazamento durante a
+validação cruzada. Os hiperparâmetros foram ajustados por busca em grade com
+validação cruzada estratificada de 5 folds \emph{somente sobre o treino},
+usando a AUC-ROC como critério de seleção. Toda a implementação foi feita em
+Python com \texttt{scikit-learn}~\cite{scikit-learn} e \texttt{xgboost}.
+Como referência, incluímos dois \emph{baselines}: prever sempre a classe
+majoritária e prever o lutador com melhor cartel (maior número de vitórias).
+
+\subsection{Métricas de avaliação}
+Reportamos acurácia, precisão, revocação, F1, AUC-ROC e log-loss. A AUC-ROC
+mede a qualidade do \emph{ranking} de probabilidades independentemente do
+limiar; a log-loss penaliza probabilidades mal calibradas; F1 resume o
+equilíbrio entre precisão e revocação. Complementarmente, analisamos a
+importância dos atributos (coeficientes da Regressão Logística e importância por
+permutação) e a calibração das probabilidades.
+
+\section{Experimentos}
+
+\subsection{Configuração experimental}
+Todos os experimentos usaram semente aleatória fixa (42) para reprodutibilidade.
+O pipeline é dividido em cinco etapas (preparação, atributos, EDA, treino e
+avaliação), executáveis de forma independente.
+
+\subsection{Análise exploratória}
+A Figura~\ref{fig:volume} mostra o crescimento do número de lutas por ano,
+refletindo a expansão do UFC. A Figura~\ref{fig:winrate} relaciona algumas
+features diferenciais à taxa de vitória observada no treino: lutadores mais
+jovens, com mais vitórias, maior envergadura e maior taxa de nocaute tendem a
+vencer mais, embora os efeitos sejam moderados --- um primeiro indício do baixo
+teto de previsibilidade do esporte.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.7\linewidth]{eda_lutas_por_ano.pdf}
+\caption{Número de lutas do UFC por ano no conjunto de dados (1993--2024).}
+\label{fig:volume}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{eda_winrate_vs_feature.pdf}
+\caption{Taxa de vitória em função de features diferenciais (binadas por
+quantis). A linha tracejada indica 50\%.}
+\label{fig:winrate}
+\end{figure}
+
+\subsection{Seleção de modelos (validação cruzada)}
+A Tabela~\ref{tab:cv} resume a AUC-ROC obtida na validação cruzada do treino.
+Os modelos ficaram próximos entre si (AUC entre 0,612 e 0,626), com leve
+vantagem da Regressão Logística, o que sugere que a relação entre os atributos e
+o resultado é predominantemente \emph{aditiva/linear} após a representação
+diferencial.
+
+\begin{table}[t]
+\centering
+\caption{AUC-ROC por validação cruzada (5 folds) no conjunto de treino.}
+\label{tab:cv}
+\begin{tabular}{lc}
+\toprule
+Modelo & AUC-ROC (CV) \\
+\midrule
+Regressão Logística & 0,626 \\
+Random Forest & 0,622 \\
+XGBoost & 0,622 \\
+Rede Neural (MLP) & 0,614 \\
+SVM (RBF) & 0,612 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Desempenho no conjunto de teste}
+A Tabela~\ref{tab:metricas} apresenta o desempenho no conjunto de teste
+temporal. Todos os modelos de aprendizagem superaram claramente os baselines.
+O \textbf{Random Forest} obteve o melhor desempenho geral
+(acurácia 0,602; AUC-ROC 0,637), seguido de perto pelos demais. As curvas ROC
+(Figura~\ref{fig:roc}) e as matrizes de confusão (Figura~\ref{fig:confusao})
+confirmam um comportamento equilibrado entre as classes, sem viés para vitória
+ou derrota --- efeito direto do espelhamento.
+
+\input{metricas_teste.tex}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\linewidth]{roc.pdf}
+\caption{Curvas ROC no conjunto de teste.}
+\label{fig:roc}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{confusao.pdf}
+\caption{Matrizes de confusão no conjunto de teste para os cinco modelos.}
+\label{fig:confusao}
+\end{figure}
+
+Um resultado notável é que o baseline ``melhor cartel'' fica praticamente no
+nível do acaso (acurácia 0,492; AUC 0,486) nas lutas recentes: escolher o
+lutador com mais vitórias, isoladamente, não é informativo. Os modelos completos
+alcançam $\sim$60\% porque combinam vários sinais fracos.
+
+\subsection{Importância dos atributos e calibração}
+A Figura~\ref{fig:importancia} mostra os coeficientes da Regressão Logística e a
+importância por permutação. A \textbf{diferença de idade} é o atributo mais
+determinante (lutadores mais velhos vencem menos), seguida da \textbf{diferença
+de derrotas}. As taxas de nocaute e finalização e a envergadura também
+contribuem positivamente, enquanto o estilo de luta tem efeito marginal. Isso
+explica a fraqueza do baseline de cartel: o número absoluto de vitórias importa
+menos do que a idade e o histórico de derrotas. A curva de calibração
+(Figura~\ref{fig:calibracao}) indica que as probabilidades previstas são
+razoavelmente confiáveis, ainda que conservadoras nos extremos.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{importancia.pdf}
+\caption{Importância dos atributos: coeficientes da Regressão Logística
+(esquerda) e importância por permutação em AUC (direita).}
+\label{fig:importancia}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\linewidth]{calibracao.pdf}
+\caption{Curva de calibração do melhor modelo linear (Regressão Logística).}
+\label{fig:calibracao}
+\end{figure}
+
+\subsection{Discussão}
+Os resultados são consistentes com o teto de previsibilidade do MMA reportado na
+literatura ($\sim$60--65\%). A proximidade entre modelos lineares e não lineares
+sugere que ganhos adicionais virão mais de \emph{melhores atributos} (por
+exemplo, estatísticas de desempenho dentro do octógono, sequência de
+vitórias/derrotas recentes, tempo de inatividade e mudança de categoria de peso)
+do que de modelos mais complexos. A divisão temporal e o espelhamento tornam a
+avaliação mais honesta, mas também mais difícil, pois o modelo é testado em
+lutadores e tendências possivelmente não vistos no treino.
+
+\section{Conclusão}
+Formulamos a previsão de lutas do UFC como classificação binária e comparamos
+cinco modelos de aprendizagem de máquina sobre 7.827 lutas reais, com uma
+metodologia cuidadosa de preparação de dados, representação diferencial
+antissimétrica com espelhamento e avaliação por divisão temporal. O melhor
+modelo (Random Forest) atingiu 60,2\% de acurácia e AUC-ROC de 0,637,
+superando os baselines e ficando dentro do teto realista do esporte. A análise
+de importância destacou idade e histórico de derrotas como fatores
+preponderantes.
+
+Como trabalhos futuros, propomos: (i) incorporar estatísticas detalhadas de
+desempenho por luta (golpes significativos, quedas, controle de solo);
+(ii) modelar a forma recente do atleta (janelas temporais e sequências de
+resultados); (iii) incorporar as odds das casas de apostas como atributo e como
+baseline forte; e (iv) explorar modelos específicos para dados longitudinais,
+como redes recorrentes ou \emph{gradient boosting} com features temporais.
+
+\section*{Contribuições dos Integrantes}
+\begin{itemize}
+  \item \textbf{Enzo Lozano}: coleta e preparação dos dados (limpeza,
+        junção das tabelas, tratamento de valores ausentes) e análise
+        exploratória.
+  \item \textbf{Alan Carneiro}: engenharia de atributos, espelhamento, divisão
+        temporal e implementação/ajuste dos modelos.
+  \item \textbf{Marcelo Marques}: avaliação, geração de figuras e tabelas,
+        análise de resultados e redação do artigo.
+\end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}

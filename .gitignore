@@ -1,0 +1,22 @@
+# Dados brutos volumosos e artefatos
+reference/
+data/raw/*.csv
+data/processed/*.csv
+results/models/*.joblib
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# LaTeX
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.toc
