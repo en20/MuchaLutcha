@@ -492,9 +492,74 @@ footer p{font-size:10px;letter-spacing:2px;color:#444;text-transform:uppercase}
   <div class="nav-logo">UFC</div>
   <div class="nav-links">
     <a href="#" class="active">Matchmaker</a>
+    <a href="#" onclick="openCustomDrawer();return false;" id="nav-custom-link">Custom Fighter</a>
   </div>
   <span class="nav-search">&#x2315;</span>
 </nav>
+
+<!-- ── Custom Fighter Drawer ── -->
+<div id="custom-overlay" onclick="closeCustomDrawer()" style="
+  display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.6);
+"></div>
+<aside id="custom-drawer" style="
+  position:fixed;top:0;right:0;bottom:0;z-index:401;
+  width:min(520px,95vw);background:#111;border-left:2px solid var(--red);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  padding:32px 28px;
+">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--red);text-transform:uppercase;margin-bottom:4px">Custom Fighter</div>
+      <div style="font-size:18px;font-weight:900;text-transform:uppercase;letter-spacing:1px">Criar Lutador</div>
+    </div>
+    <button onclick="closeCustomDrawer()" style="background:none;color:#666;font-size:20px;padding:4px 8px;">&#x2715;</button>
+  </div>
+
+  <div style="margin-bottom:20px">
+    <label class="cf-label">Nome do Lutador</label>
+    <input id="cf-name" class="cf-input" type="text" placeholder="Ex: Jon Doe" style="width:100%">
+  </div>
+
+  <div class="cf-group-title" style="margin-top:20px">Físico</div>
+  <div class="cf-row"><label class="cf-label">Idade</label><input id="cf-age" class="cf-input cf-num" type="number" value="28" min="18" max="50"></div>
+  <div class="cf-row"><label class="cf-label">Altura (cm)</label><input id="cf-height" class="cf-input cf-num" type="number" value="178" min="150" max="220"></div>
+  <div class="cf-row"><label class="cf-label">Envergadura (cm)</label><input id="cf-reach" class="cf-input cf-num" type="number" value="183" min="150" max="230"></div>
+  <div class="cf-row">
+    <label class="cf-label">Stance</label>
+    <select id="cf-stance" class="cf-input" style="width:140px">
+      <option value="orthodox">Orthodox</option>
+      <option value="southpaw">Southpaw</option>
+      <option value="switch">Switch</option>
+      <option value="other">Other</option>
+    </select>
+  </div>
+
+  <div class="cf-group-title" style="margin-top:20px">Cartel</div>
+  <div class="cf-row"><label class="cf-label">Vitórias</label><input id="cf-wins" class="cf-input cf-num" type="number" value="10" min="0"></div>
+  <div class="cf-row"><label class="cf-label">Derrotas</label><input id="cf-losses" class="cf-input cf-num" type="number" value="2" min="0"></div>
+  <div class="cf-row"><label class="cf-label">Vitórias por KO</label><input id="cf-ko" class="cf-input cf-num" type="number" value="4" min="0"></div>
+  <div class="cf-row"><label class="cf-label">Vitórias por Sub</label><input id="cf-sub" class="cf-input cf-num" type="number" value="2" min="0"></div>
+  <div class="cf-row"><label class="cf-label">Derrotas por KO</label><input id="cf-ko-losses" class="cf-input cf-num" type="number" value="0" min="0"></div>
+
+  <div class="cf-group-title" style="margin-top:20px">Forma Recente</div>
+  <div class="cf-row"><label class="cf-label">Win rate últimos 5 anos (0–1)</label><input id="cf-l5y" class="cf-input cf-num" type="number" value="0.7" min="0" max="1" step="0.05"></div>
+  <div class="cf-row"><label class="cf-label">Win rate últimos 2 anos (0–1)</label><input id="cf-l2y" class="cf-input cf-num" type="number" value="0.7" min="0" max="1" step="0.05"></div>
+  <div class="cf-row"><label class="cf-label">Taxa de decisão geral (0–1)</label><input id="cf-dec-rate" class="cf-input cf-num" type="number" value="0.5" min="0" max="1" step="0.05"></div>
+
+  <div class="cf-group-title" style="margin-top:20px">Estatísticas de Luta</div>
+  <div class="cf-row"><label class="cf-label">Golpes sig. dados/luta</label><input id="cf-ssl" class="cf-input cf-num" type="number" value="4.0" min="0" step="0.1"></div>
+  <div class="cf-row"><label class="cf-label">Golpes sig. absorvidos/luta</label><input id="cf-ssa" class="cf-input cf-num" type="number" value="3.0" min="0" step="0.1"></div>
+  <div class="cf-row"><label class="cf-label">Takedowns/luta</label><input id="cf-td" class="cf-input cf-num" type="number" value="1.0" min="0" step="0.1"></div>
+  <div class="cf-row"><label class="cf-label">Precisão de takedown (0–1)</label><input id="cf-tda" class="cf-input cf-num" type="number" value="0.4" min="0" max="1" step="0.05"></div>
+  <div class="cf-row"><label class="cf-label">Precisão de golpes sig. (0–1)</label><input id="cf-ssa2" class="cf-input cf-num" type="number" value="0.5" min="0" max="1" step="0.05"></div>
+
+  <div style="display:flex;gap:10px;margin-top:28px;flex-wrap:wrap">
+    <button class="btn" style="background:var(--red);color:#fff;border:none;flex:1" onclick="addCustomFighter('red')">&#x2B; Red Corner</button>
+    <button class="btn" style="background:#2255cc;color:#fff;border:none;flex:1" onclick="addCustomFighter('blue')">&#x2B; Blue Corner</button>
+  </div>
+  <button class="btn btn-clear" style="width:100%;margin-top:10px" onclick="resetCustomForm()">&#x21BA; Reset</button>
+</aside>
 
 <!-- ── Hero ── -->
 <section class="hero">
@@ -519,9 +584,6 @@ footer p{font-size:10px;letter-spacing:2px;color:#444;text-transform:uppercase}
       ⚠ Cruza categorias de peso — previsão pouco confiável
     </p>
   </div>
-  <div class="mode-tab" data-mode="custom" onclick="setMode('custom')">
-    <h3>Custom Fighter</h3><p>Crie seu lutador</p>
-  </div>
 </div>
 
 <!-- ── Division Pills ── -->
@@ -529,79 +591,6 @@ footer p{font-size:10px;letter-spacing:2px;color:#444;text-transform:uppercase}
   <div class="division-label">Categoria de peso</div>
   <div class="division-pills" id="pills"></div>
 </div>
-
-<!-- ── Custom Fighter Builder ── -->
-<section id="custom-section" style="display:none;padding:24px 32px;background:#111;border-bottom:1px solid #222">
-  <div style="max-width:900px;margin:0 auto">
-    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
-      <h2 style="font-size:13px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin:0">Criar lutador</h2>
-      <span style="font-size:11px;color:#555;letter-spacing:1px">Preencha os campos e adicione ao corner desejado</span>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 32px">
-      <!-- Name -->
-      <div style="grid-column:1/-1">
-        <label class="cf-label">Nome do Lutador</label>
-        <input id="cf-name" class="cf-input" type="text" placeholder="Ex: Jon Doe" style="width:100%;max-width:340px">
-      </div>
-
-      <!-- Physical -->
-      <div>
-        <div class="cf-group-title">Físico</div>
-        <div class="cf-row"><label class="cf-label">Idade</label><input id="cf-age" class="cf-input cf-num" type="number" value="28" min="18" max="50"></div>
-        <div class="cf-row"><label class="cf-label">Altura (cm)</label><input id="cf-height" class="cf-input cf-num" type="number" value="178" min="150" max="220"></div>
-        <div class="cf-row"><label class="cf-label">Envergadura (cm)</label><input id="cf-reach" class="cf-input cf-num" type="number" value="183" min="150" max="230"></div>
-        <div class="cf-row">
-          <label class="cf-label">Stance</label>
-          <select id="cf-stance" class="cf-input" style="width:140px">
-            <option value="orthodox">Orthodox</option>
-            <option value="southpaw">Southpaw</option>
-            <option value="switch">Switch</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Record -->
-      <div>
-        <div class="cf-group-title">Cartel</div>
-        <div class="cf-row"><label class="cf-label">Vitórias</label><input id="cf-wins" class="cf-input cf-num" type="number" value="10" min="0"></div>
-        <div class="cf-row"><label class="cf-label">Derrotas</label><input id="cf-losses" class="cf-input cf-num" type="number" value="2" min="0"></div>
-        <div class="cf-row"><label class="cf-label">Vitórias por KO</label><input id="cf-ko" class="cf-input cf-num" type="number" value="4" min="0"></div>
-        <div class="cf-row"><label class="cf-label">Vitórias por Sub</label><input id="cf-sub" class="cf-input cf-num" type="number" value="2" min="0"></div>
-        <div class="cf-row"><label class="cf-label">Derrotas por KO</label><input id="cf-ko-losses" class="cf-input cf-num" type="number" value="0" min="0"></div>
-      </div>
-
-      <!-- Recent form -->
-      <div>
-        <div class="cf-group-title">Forma Recente</div>
-        <div class="cf-row"><label class="cf-label">Win rate últimos 5 anos (0–1)</label><input id="cf-l5y" class="cf-input cf-num" type="number" value="0.7" min="0" max="1" step="0.05"></div>
-        <div class="cf-row"><label class="cf-label">Win rate últimos 2 anos (0–1)</label><input id="cf-l2y" class="cf-input cf-num" type="number" value="0.7" min="0" max="1" step="0.05"></div>
-        <div class="cf-row"><label class="cf-label">Taxa de decisão geral (0–1)</label><input id="cf-dec-rate" class="cf-input cf-num" type="number" value="0.5" min="0" max="1" step="0.05"></div>
-      </div>
-
-      <!-- Fight stats -->
-      <div>
-        <div class="cf-group-title">Estatísticas de Luta</div>
-        <div class="cf-row"><label class="cf-label">Golpes sig. dados/luta</label><input id="cf-ssl" class="cf-input cf-num" type="number" value="4.0" min="0" step="0.1"></div>
-        <div class="cf-row"><label class="cf-label">Golpes sig. absorvidos/luta</label><input id="cf-ssa" class="cf-input cf-num" type="number" value="3.0" min="0" step="0.1"></div>
-        <div class="cf-row"><label class="cf-label">Takedowns/luta</label><input id="cf-td" class="cf-input cf-num" type="number" value="1.0" min="0" step="0.1"></div>
-        <div class="cf-row"><label class="cf-label">Precisão de takedown (0–1)</label><input id="cf-tda" class="cf-input cf-num" type="number" value="0.4" min="0" max="1" step="0.05"></div>
-        <div class="cf-row"><label class="cf-label">Precisão de golpes sig. (0–1)</label><input id="cf-ssa2" class="cf-input cf-num" type="number" value="0.5" min="0" max="1" step="0.05"></div>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
-      <button class="btn" style="background:var(--red);color:#fff;border:none;" onclick="addCustomFighter('red')">
-        &#x2B; Red Corner
-      </button>
-      <button class="btn" style="background:#2255cc;color:#fff;border:none;" onclick="addCustomFighter('blue')">
-        &#x2B; Blue Corner
-      </button>
-      <button class="btn btn-clear" onclick="resetCustomForm()">&#x21BA; Reset</button>
-    </div>
-  </div>
-</section>
 
 <!-- ── Tale of the Tape ── -->
 <section class="tape-section">
@@ -830,25 +819,14 @@ function setMode(mode) {
   });
   const hint = document.getElementById('action-hint');
   const openWarn = document.getElementById('open-warn');
-  const customSection = document.getElementById('custom-section');
-  const divisionBar = document.querySelector('.division-bar');
-  const rosterSection = document.getElementById('roster-section');
 
   openWarn.style.display = 'none';
-  customSection.style.display = 'none';
-  divisionBar.style.display = '';
-  rosterSection.style.display = '';
 
   if (mode === 'classic') {
     hint.textContent = 'Mesma divisão obrigatória — booking legal.';
-  } else if (mode === 'open') {
+  } else {
     hint.textContent = '(Open)heimmer — qualquer lutador, qualquer categoria.';
     openWarn.style.display = 'block';
-  } else if (mode === 'custom') {
-    hint.textContent = 'Custom Fighter — crie um lutador e teste-o contra qualquer oponente.';
-    customSection.style.display = 'block';
-    divisionBar.style.display = 'none';
-    rosterSection.style.display = 'none';
   }
   updateTapeMeta();
 }
@@ -887,13 +865,26 @@ function readCustomForm() {
   };
 }
 
+function openCustomDrawer() {
+  document.getElementById('custom-overlay').style.display = 'block';
+  document.getElementById('custom-drawer').style.transform = 'translateX(0)';
+  document.getElementById('nav-custom-link').classList.add('active');
+}
+
+function closeCustomDrawer() {
+  document.getElementById('custom-overlay').style.display = 'none';
+  document.getElementById('custom-drawer').style.transform = 'translateX(100%)';
+  document.getElementById('nav-custom-link').classList.remove('active');
+}
+
 function addCustomFighter(corner) {
   const f = readCustomForm();
   if (!f.name.trim()) { showToast('Digite um nome para o lutador'); return; }
   state[corner] = f;
   renderCards();
   updatePredictBtn();
-  showToast(`${f.name} adicionado ao ${corner === 'red' ? 'Red' : 'Blue'} Corner`);
+  closeCustomDrawer();
+  showToast(`${f.name} → ${corner === 'red' ? 'Red' : 'Blue'} Corner`);
 }
 
 function resetCustomForm() {
@@ -964,9 +955,7 @@ function renderRoster() {
 function esc(s) { return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
 
 function updateTapeMeta() {
-  const label = state.mode === 'custom'
-    ? 'Custom Matchup'
-    : (DIVISIONS.find(d => d.key === state.division)?.label || '');
+  const label = DIVISIONS.find(d => d.key === state.division)?.label || '';
   const rounds = state.titleFight ? 5 : 3;
   document.getElementById('tape-meta').textContent = `${label.toUpperCase()} · ${rounds} RD × 5 MIN`;
   const btn = document.getElementById('rounds-toggle');
