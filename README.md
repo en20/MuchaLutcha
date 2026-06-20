@@ -1,13 +1,13 @@
-# Previsão de Resultados de Lutas do UFC com Aprendizagem de Máquina
+# MuchaLutcha — UFC Fight Predictor
 
-Projeto final da disciplina **Aprendizagem de Máquina (2026.1)** — Departamento
-de Computação, UFC. Prof. César Lincoln C. Mattos.
+Projeto final da disciplina **Aprendizagem de Máquina (2026.1)** — Departamento de Computação, UFC.  
+Prof. César Lincoln C. Mattos.
 
-Formulamos a previsão do vencedor de uma luta do UFC como **classificação
-binária** e comparamos cinco modelos de ML (Regressão Logística, Random Forest,
-XGBoost, SVM e Rede Neural/MLP) sobre **7.827 lutas reais (1993–2024)**.
+Previsão do vencedor de lutas do UFC como **classificação binária**, comparando cinco modelos de ML sobre **7.827 lutas reais (1993–2024)**. Inclui um web app com scraping ao vivo dos rankings oficiais da UFC.
 
-## Resultados principais
+---
+
+## Resultados
 
 | Modelo | Acurácia | AUC-ROC |
 |---|---|---|
@@ -21,70 +21,140 @@ XGBoost, SVM e Rede Neural/MLP) sobre **7.827 lutas reais (1993–2024)**.
 
 Atributos mais determinantes: **diferença de idade** e **diferença de derrotas**.
 
+---
+
 ## Estrutura
 
 ```
-data/raw/         CSVs reais (do repositório Punch-Prophecy)
+src/              pipeline de ML (data_prep → features → eda → train → evaluate)
+data/raw/         CSVs de entrada (ufc_fights.csv, fighter_stats.csv)
 data/processed/   dataset limpo + matrizes de treino/teste
-src/              pipeline em Python
-results/          figuras, tabelas e modelos treinados
-paper/            artigo em LaTeX (main.tex -> main.pdf)
+results/          figuras, tabelas e modelos treinados (.joblib)
+web/              frontend do web app (index.html)
+app.py            servidor Flask (API + web app)
+predict.py        preditor interativo via terminal
+paper/            artigo em LaTeX
 ```
 
-## Como reproduzir
+---
 
-### 1. Dependências
-```bash
-pip install -r requirements.txt
-```
+## Opção 1 — Web App via Docker (recomendado)
 
-### 2. Dados
-Os CSVs já estão em `data/raw/`. Caso precise reobtê-los, clone o repositório de
-referência e copie os arquivos:
+> Requer [Docker](https://docs.docker.com/get-docker/) instalado.
+
+### 1. Obter os dados brutos
+
 ```bash
-git clone https://github.com/leotuckey/Punch-Prophecy-Leo-Tuckey reference
+git clone --depth=1 --filter=blob:none --sparse \
+  https://github.com/leotuckey/Punch-Prophecy-Leo-Tuckey reference
+cd reference
+git sparse-checkout set src/models/buildingMLModel/data/processed/
+cd ..
+mkdir -p data/raw
 cp reference/src/models/buildingMLModel/data/processed/ufc_fights.csv data/raw/
 cp reference/src/models/buildingMLModel/data/processed/fighter_stats.csv data/raw/
 ```
 
-### 3. Pipeline
-Execute as etapas em ordem (ou use o script `run_all`):
+### 2. Build e run
+
+```bash
+docker build -t muchalutcha .
+docker run -p 5000:5000 muchalutcha
+```
+
+Abra **http://localhost:5000** no navegador.
+
+> O container executa o pipeline completo (treino + avaliação) na primeira inicialização e depois sobe o servidor web. Se quiser pular o treino e usar modelos já treinados, monte o diretório `results/`:
+> ```bash
+> docker run -p 5000:5000 -v $(pwd)/results:/app/results muchalutcha
+> ```
+
+---
+
+## Opção 2 — Rodar localmente
+
+### 1. Dependências
+
+```bash
+pip install -r requirements.txt
+pip install flask flask-cors requests beautifulsoup4
+```
+
+Ou com `uv` (mais rápido):
+
+```bash
+uv venv .venv
+uv pip install -r requirements.txt
+uv pip install flask flask-cors requests beautifulsoup4
+```
+
+### 2. Dados
+
+```bash
+git clone --depth=1 --filter=blob:none --sparse \
+  https://github.com/leotuckey/Punch-Prophecy-Leo-Tuckey reference
+cd reference && git sparse-checkout set src/models/buildingMLModel/data/processed/ && cd ..
+mkdir -p data/raw
+cp reference/src/models/buildingMLModel/data/processed/ufc_fights.csv data/raw/
+cp reference/src/models/buildingMLModel/data/processed/fighter_stats.csv data/raw/
+```
+
+### 3. Treinar os modelos
+
 ```bash
 cd src
-python data_prep.py   # limpeza -> data/processed/fights.csv
-python features.py     # features + espelhamento + split temporal
-python eda.py          # figuras exploratórias
-python train.py        # treina e ajusta os 5 modelos (GridSearchCV)
-python evaluate.py     # métricas, ROC, importância, calibração
+python data_prep.py   # limpeza → data/processed/fights.csv
+python features.py    # engenharia de features + split temporal
+python train.py       # GridSearchCV nos 5 modelos (~2 min)
+python evaluate.py    # métricas, figuras, tabelas
+cd ..
 ```
 
-Atalho (na raiz do projeto):
+Atalho:
+
 ```bash
-bash run_all.sh          # Linux/Git Bash
-# ou
-pwsh ./run_all.ps1       # Windows PowerShell
+bash run_all.sh       # Linux/macOS
+pwsh ./run_all.ps1    # Windows PowerShell
 ```
 
-### 4. Artigo (PDF)
-Requer uma distribuição LaTeX. Recomendamos o
-[tectonic](https://tectonic-typesetting.github.io/) (binário único):
+### 4. Web App
+
 ```bash
-cp results/tables/metricas_teste.tex paper/metricas_teste.tex
-cd paper
-tectonic main.tex        # gera paper/main.pdf
+python app.py
+# → http://localhost:5000
 ```
-Alternativamente, suba a pasta `paper/` no [Overleaf](https://overleaf.com).
+
+### 5. Preditor via terminal (opcional)
+
+```bash
+# Demo com 10 lutas históricas reais
+python predict.py --demo
+
+# Confronto direto
+python predict.py --fight "Jon Jones" "Tom Aspinall"
+
+# Modo interativo
+python predict.py
+```
+
+---
 
 ## Decisões metodológicas
 
-- **Fonte limpa de atributos físicos**: altura, envergadura e estilo vêm do
-  `fighter_stats.csv` (texto limpo, 99,3% de cobertura), usando `ufc_fights.csv`
-  só como reserva; ausentes contínuos imputados pela mediana.
-- **Representação diferencial** (lutador − oponente), antissimétrica.
-- **Espelhamento** do treino: remove viés de canto e balanceia as classes.
-- **Divisão temporal** (80% treino mais antigo / 20% teste mais recente): evita
-  vazamento e simula o uso real.
-- **Seleção por validação cruzada** (5 folds, AUC) apenas no treino.
+- **Representação diferencial** (lutador − oponente): antissimétrica, permite espelhar cada luta no treino para balancear classes e eliminar viés de canto.
+- **Split temporal** (80% antigas / 20% recentes): evita vazamento de dados e simula uso real — treina no passado, testa no futuro.
+- **Atributos físicos** preferidos do `fighter_stats.csv` (cobertura ~99,3%); ausentes imputados pela mediana.
+- **Seleção de hiperparâmetros** por `GridSearchCV` com 5-fold estratificado, métrica AUC, apenas no conjunto de treino.
+- **Semente fixa** `SEMENTE = 42` em `src/config.py` para reprodutibilidade total.
 
-## Reprodutibilidade
-Semente aleatória fixa (`SEMENTE = 42` em `src/config.py`).
+---
+
+## Artigo (PDF)
+
+```bash
+cp results/tables/metricas_teste.tex paper/metricas_teste.tex
+cd paper
+tectonic main.tex   # gera paper/main.pdf
+```
+
+Ou suba a pasta `paper/` no [Overleaf](https://overleaf.com).
