@@ -173,6 +173,11 @@ nav{
 }
 .card-close:hover{color:#fff}
 
+.fighter-img{
+  width:100%;max-height:180px;object-fit:contain;object-position:bottom;
+  margin-bottom:10px;display:block;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.6));
+}
 .fighter-rank-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
 .rank-badge{
   width:44px;height:44px;display:flex;align-items:center;
@@ -822,39 +827,57 @@ function toggleRounds() {
 /* ══════════════════════════════════════════════
    Fighter selection
 ══════════════════════════════════════════════ */
-async function quickAdd(name, slug, rank) {
-  // Auto-fill first empty corner
+async function quickAdd(name, slug, rank, division) {
   const corner = !state.red ? 'red' : (!state.blue ? 'blue' : null);
   if (!corner) return;
-  await loadAndSetFighter(corner, name, slug, rank);
+  await loadAndSetFighter(corner, name, slug, rank, division || state.division);
 }
 
 async function selectFromRoster(evt, corner, name, slug, rank) {
   evt.stopPropagation();
-  await loadAndSetFighter(corner, name, slug, rank);
+  await loadAndSetFighter(corner, name, slug, rank, state.division);
 }
 
-async function loadAndSetFighter(corner, name, slug, rank) {
+async function loadAndSetFighter(corner, name, slug, rank, division) {
   showToast(`Carregando ${name}…`);
   try {
     const res = await fetch(`/api/fighter/${encodeURIComponent(name)}`);
     const json = await res.json();
     if (!json.ok) {
-      // Use minimal data from roster
-      state[corner] = { name, slug, rank, wins:0, losses:0, ko:0, sub:0,
-                        age:30, height:177.8, reach:182.9, stance:'orthodox' };
+      state[corner] = { name, slug, rank, division, wins:0, losses:0, ko:0, sub:0,
+                        age:30, height:177.8, reach:182.9, stance:'orthodox', img:null };
     } else {
       const d = json.data;
       state[corner] = {
-        name,slug,rank,
+        name, slug, rank, division,
         wins: d.wins, losses: d.losses, ko: d.ko, sub: d.sub,
+        ko_losses: d.ko_losses,
         age: d.age, height: d.height, reach: d.reach, stance: d.stance,
+        L5Y_winrate: d.L5Y_winrate, L2Y_winrate: d.L2Y_winrate,
+        sig_strikes_landed: d.sig_strikes_landed,
+        sig_strikes_absorbed: d.sig_strikes_absorbed,
+        td_landed: d.td_landed, td_acc: d.td_acc,
+        sig_strike_acc: d.sig_strike_acc,
+        dec_rate_overall: d.dec_rate_overall,
         record: `${d.wins}-${d.losses}`,
+        img: null,
       };
     }
     renderCards();
     updatePredictBtn();
     hideToast();
+    // Fetch image asynchronously — update card when ready
+    if (slug) {
+      fetch(`/api/fighter-image/${encodeURIComponent(slug)}`)
+        .then(r => r.json())
+        .then(j => {
+          if (j.img && state[corner]?.slug === slug) {
+            state[corner].img = j.img;
+            renderCard(corner);
+          }
+        })
+        .catch(() => {});
+    }
   } catch(e) {
     showToast('Erro ao carregar lutador');
   }
@@ -902,16 +925,23 @@ function renderCard(corner) {
   const colorClass = isRed ? 'red' : 'blue';
   const badgeIsChamp = f.rank === 'C';
 
+  const divKey = f.division || state.division;
+  const divLabel = DIVISIONS.find(d=>d.key===divKey)?.label || '';
+  const imgHtml = f.img
+    ? `<img class="fighter-img" src="${f.img}" alt="${f.name}" onerror="this.style.display='none'">`
+    : '';
+
   el.innerHTML = `
     <div class="corner-label">
       <div class="corner-dot ${corner}"></div>${isRed?'Red':'Blue'} Corner
     </div>
     <button class="card-close" onclick="clearFighter('${corner}')">&#x2715;</button>
+    ${imgHtml}
     <div class="fighter-rank-row">
       <div class="rank-badge ${colorClass}${badgeIsChamp?' champ-badge':''}">${rankLabel}</div>
       <div>
         <div class="fighter-name">${f.name}</div>
-        <div class="fighter-origin">${DIVISIONS.find(d=>d.key===state.division)?.label||''}</div>
+        <div class="fighter-origin">${divLabel}</div>
       </div>
     </div>
     <div class="fighter-stats-grid">
@@ -967,15 +997,19 @@ function renderPickerList(fighters) {
     item.className = 'picker-item';
     const rankLabel = f.rank === 'C' ? 'C' : f.rank;
     const rankClass = f.is_champ ? 'champ-r' : '';
+    const divLabel = state.mode === 'open' && f.division
+      ? `<span style="color:#d10a10;margin-left:6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase">${DIVISIONS.find(d=>d.key===f.division)?.label||f.division}</span>`
+      : '';
+    const subText = f.is_champ ? 'Campeão' : 'Ranking #' + f.rank;
     item.innerHTML = `
       <div class="picker-rank ${rankClass}">${rankLabel}</div>
       <div>
-        <div class="picker-item-name">${f.name}</div>
-        <div class="picker-item-sub">${f.is_champ ? 'Campeão' : 'Ranking #' + f.rank}</div>
+        <div class="picker-item-name">${f.name}${divLabel}</div>
+        <div class="picker-item-sub">${subText}</div>
       </div>`;
     item.onclick = async () => {
       closePicker();
-      await loadAndSetFighter(state.pickerTarget, f.name, f.slug, f.rank);
+      await loadAndSetFighter(state.pickerTarget, f.name, f.slug, f.rank, f.division);
     };
     list.appendChild(item);
   });

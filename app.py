@@ -127,14 +127,17 @@ def scrape_rankings():
 
         fighters = []
 
-        # Champion
+        # Champion — also grab their headshot from the listing image
         champ_el = group.select_one(".rankings--athlete--champion h5 a")
+        champ_img = group.select_one(".rankings--athlete--champion img")
         if champ_el:
             fighters.append({
                 "rank": "C",
                 "name": champ_el.get_text(strip=True),
                 "slug": champ_el["href"].replace("/athlete/", ""),
+                "division": div_key,
                 "is_champ": True,
+                "img": champ_img["src"] if champ_img else None,
             })
 
         # Ranked fighters
@@ -152,7 +155,9 @@ def scrape_rankings():
                 "rank": rank_num,
                 "name": name_td.get_text(strip=True),
                 "slug": name_td["href"].replace("/athlete/", ""),
+                "division": div_key,
                 "is_champ": False,
+                "img": None,
             })
 
         result[div_key] = fighters
@@ -172,6 +177,51 @@ def get_rankings():
                     raise
                 app.logger.warning(f"Rankings scrape failed, using cache: {e}")
         return _rankings_cache["data"]
+
+
+# ---------------------------------------------------------------------------
+# Fighter image scraping (cached per slug, never expires in-process)
+# ---------------------------------------------------------------------------
+_img_cache: dict[str, str | None] = {}
+_img_lock = threading.Lock()
+
+def _slug_to_name_parts(slug: str) -> tuple[str, str]:
+    """'jon-jones' → ('JONES', 'JON')"""
+    parts = slug.split("-")
+    if len(parts) == 1:
+        return parts[0].upper(), ""
+    return "_".join(parts[1:]).upper(), parts[0].upper()
+
+def scrape_fighter_image(slug: str) -> str | None:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    url = f"https://www.ufc.com/athlete/{slug}"
+    try:
+        r = requests.get(url, headers=headers, timeout=10)
+        r.raise_for_status()
+        import re
+        # Prefer the full-body silhouette, fall back to headshot
+        for style in ("event_results_athlete_headshot", "athlete_bio_full_body"):
+            m = re.search(
+                rf'https?://(?:www\.)?ufc\.com/images/styles/{style}/[^\s"\'<>]+\.(?:jpg|png|webp)',
+                r.text,
+            )
+            if m:
+                url_img = m.group(0)
+                if not url_img.startswith("https://www."):
+                    url_img = url_img.replace("https://ufc.com", "https://www.ufc.com")
+                return url_img
+    except Exception:
+        pass
+    return None
+
+def get_fighter_image(slug: str) -> str | None:
+    with _img_lock:
+        if slug not in _img_cache:
+            _img_cache[slug] = scrape_fighter_image(slug)
+        return _img_cache[slug]
 
 
 # ---------------------------------------------------------------------------
@@ -362,6 +412,13 @@ def api_fighter(name):
     rec.update(phys)
     rec["matched_name"] = matched_name
     return jsonify({"ok": True, "data": rec})
+
+
+@app.route("/api/fighter-image/<path:slug>")
+def api_fighter_image(slug):
+    """Return the UFC headshot URL for a fighter slug (cached)."""
+    img = get_fighter_image(slug)
+    return jsonify({"ok": img is not None, "img": img})
 
 
 @app.route("/api/predict", methods=["POST"])
