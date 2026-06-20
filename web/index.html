@@ -78,7 +78,7 @@ nav{
 /* ── Mode Tabs ──────────────────────────────────── */
 .mode-bar{
   background:#f5f5f5;
-  display:grid;grid-template-columns:1fr 1fr 1fr;
+  display:grid;grid-template-columns:1fr 1fr;
   border-bottom:1px solid #ddd;
 }
 .mode-tab{
@@ -465,11 +465,7 @@ footer p{font-size:10px;letter-spacing:2px;color:#444;text-transform:uppercase}
 <nav>
   <div class="nav-logo">UFC</div>
   <div class="nav-links">
-    <a href="#">Eventos</a>
-    <a href="#">Rankings</a>
     <a href="#" class="active">Matchmaker</a>
-    <a href="#">Atletas</a>
-    <a href="#">Notícias</a>
   </div>
   <span class="nav-search">&#x2315;</span>
 </nav>
@@ -489,9 +485,6 @@ footer p{font-size:10px;letter-spacing:2px;color:#444;text-transform:uppercase}
 <div class="mode-bar">
   <div class="mode-tab active" data-mode="classic" onclick="setMode('classic')">
     <h3>Classic</h3><p>Mesma categoria</p>
-  </div>
-  <div class="mode-tab" data-mode="random" onclick="setMode('random')">
-    <h3>Random</h3><p>Sorteio na divisão</p>
   </div>
   <div class="mode-tab" data-mode="open" onclick="setMode('open')">
     <h3>(Open)heimmer</h3><p>Qualquer um vs qualquer um</p>
@@ -714,7 +707,6 @@ function setMode(mode) {
   });
   const hint = document.getElementById('action-hint');
   if (mode === 'classic') hint.textContent = 'Mesma divisão obrigatória — booking legal.';
-  else if (mode === 'random') hint.textContent = 'Sorteio aleatório dentro da divisão.';
   else hint.textContent = '(Open)heimmer — qualquer lutador, qualquer categoria.';
 }
 
