@@ -193,26 +193,33 @@ def _slug_to_name_parts(slug: str) -> tuple[str, str]:
     return "_".join(parts[1:]).upper(), parts[0].upper()
 
 def scrape_fighter_image(slug: str) -> str | None:
+    import re
     headers = {
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
                       "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
     url = f"https://www.ufc.com/athlete/{slug}"
+
+    # Build name fragments from slug to filter out opponents' photos.
+    # "tabatha-ricci" → ["TABATHA", "RICCI"]  — any part of the name is enough.
+    name_parts = [p.upper() for p in slug.split("-") if len(p) > 2]
+
     try:
         r = requests.get(url, headers=headers, timeout=10)
         r.raise_for_status()
-        import re
-        # Prefer the full-body silhouette, fall back to headshot
+
         for style in ("event_results_athlete_headshot", "athlete_bio_full_body"):
-            m = re.search(
-                rf'https?://(?:www\.)?ufc\.com/images/styles/{style}/[^\s"\'<>]+\.(?:jpg|png|webp)',
-                r.text,
+            pattern = re.compile(
+                rf'https?://(?:www\.)?ufc\.com/images/styles/{style}/[^\s"\'<>]+\.(?:jpg|png|webp)'
             )
-            if m:
-                url_img = m.group(0)
-                if not url_img.startswith("https://www."):
-                    url_img = url_img.replace("https://ufc.com", "https://www.ufc.com")
-                return url_img
+            for m in pattern.finditer(r.text):
+                img_url = m.group(0)
+                upper = img_url.upper()
+                # Accept only if at least one part of the fighter's own name is in the URL
+                if any(part in upper for part in name_parts):
+                    if not img_url.startswith("https://www."):
+                        img_url = img_url.replace("https://ufc.com", "https://www.ufc.com")
+                    return img_url
     except Exception:
         pass
     return None
