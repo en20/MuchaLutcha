@@ -122,7 +122,9 @@ Hiperparâmetros são selecionados por `GridSearchCV` com 5-fold estratificado n
 
 ## Web App
 
-Interface completa para simular confrontos entre lutadores reais ou criados pelo usuário:
+Interface completa para simular confrontos entre lutadores reais ou criados pelo usuário.
+
+![Hero — Book the fight you want to see](assets/screenshot-hero.png)
 
 - **Classic mode** — seleciona lutadores da divisão escolhida
 - **(Open)heimmer mode** — qualquer lutador vs qualquer lutador, sem restrições de peso
@@ -131,6 +133,12 @@ Interface completa para simular confrontos entre lutadores reais ou criados pelo
 - **Fotos dos atletas** — carregadas assincronamente da UFC.com
 - **Title Fight toggle** — alterna 3 vs 5 rounds e ativa o boost de `dec_rate_overall`
 - **Previsão em ensemble** — média dos 5 modelos com detalhamento por modelo e comparativo de atributos
+
+![Tale of the Tape — confronto Gaethje vs Oliveira](assets/screenshot-tale-of-tape.png)
+
+![Resultado da previsão — detalhamento por modelo](assets/screenshot-result.png)
+
+![Roster — Lightweight com 16 fighters](assets/screenshot-roster.png)
 
 ---
 
