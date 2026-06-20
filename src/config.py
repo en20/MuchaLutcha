@@ -1,9 +1,4 @@
-"""Configurações globais do projeto de previsão de lutas do UFC.
-
-Centraliza caminhos de arquivos, semente aleatória e a lista de atributos
-utilizados pelos modelos, para garantir reprodutibilidade entre as etapas
-do pipeline (preparação -> features -> treino -> avaliação).
-"""
+"""Configurações globais do projeto de previsão de lutas do UFC."""
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -12,36 +7,34 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 
 DIR_DADOS_BRUTOS = RAIZ / "data" / "raw"
-DIR_DADOS_PROC = RAIZ / "data" / "processed"
-DIR_RESULTADOS = RAIZ / "results"
-DIR_FIGURAS = DIR_RESULTADOS / "figures"
-DIR_TABELAS = DIR_RESULTADOS / "tables"
-DIR_MODELOS = DIR_RESULTADOS / "models"
-DIR_FIG_ARTIGO = RAIZ / "paper" / "figures"
+DIR_DADOS_PROC   = RAIZ / "data" / "processed"
+DIR_RESULTADOS   = RAIZ / "results"
+DIR_FIGURAS      = DIR_RESULTADOS / "figures"
+DIR_TABELAS      = DIR_RESULTADOS / "tables"
+DIR_MODELOS      = DIR_RESULTADOS / "models"
+DIR_FIG_ARTIGO   = RAIZ / "paper" / "figures"
 
-# Arquivos de entrada (copiados do repositório de referência Punch-Prophecy)
-CSV_LUTAS = DIR_DADOS_BRUTOS / "ufc_fights.csv"
+CSV_LUTAS     = DIR_DADOS_BRUTOS / "ufc_fights.csv"
 CSV_LUTADORES = DIR_DADOS_BRUTOS / "fighter_stats.csv"
 
-# Arquivos intermediários
-CSV_PROC = DIR_DADOS_PROC / "fights.csv"          # dataset limpo (1 linha por luta)
-CSV_TREINO = DIR_DADOS_PROC / "train.csv"          # features + alvo (treino, espelhado)
-CSV_TESTE = DIR_DADOS_PROC / "test.csv"            # features + alvo (teste)
+CSV_PROC   = DIR_DADOS_PROC / "fights.csv"
+CSV_TREINO = DIR_DADOS_PROC / "train.csv"
+CSV_TESTE  = DIR_DADOS_PROC / "test.csv"
 
 # ---------------------------------------------------------------------------
 # Reprodutibilidade
 # ---------------------------------------------------------------------------
-SEMENTE = 42
-
-# Fração final (mais recente) das lutas reservada para teste (split temporal)
+SEMENTE    = 42
 FRAC_TESTE = 0.20
+
+# Corte temporal: ignorar lutas antes de 2008 (stats de luta pouco cobertas).
+ANO_MINIMO = 2008
 
 # ---------------------------------------------------------------------------
 # Atributos
 # ---------------------------------------------------------------------------
-# Atributos numéricos diferenciais (lutador - oponente). São os definidos pelo
-# grupo: idade, altura, envergadura, cartel (vitórias/derrotas), número de
-# lutas anteriores e taxas de vitória por método (nocaute/finalização/decisão).
+
+# Grupo 1 — diferenciais básicos (lutador - oponente)
 FEATURES_DIFF = [
     "d_idade",
     "d_altura",
@@ -52,23 +45,41 @@ FEATURES_DIFF = [
     "d_taxa_ko",
     "d_taxa_sub",
     "d_taxa_dec",
+    "d_ko_losses",      # chin: derrotas por nocaute é proxy de queixo ruim
 ]
 
-# Atributos de estilo de luta (stance). Para cada estilo guardamos a diferença
-# de indicadores (lutador - oponente), antissimétrica como as demais features.
+# Grupo 2 — forma recente (últimas 5 e 2 lutas)
+FEATURES_FORMA = [
+    "d_L5Y_winrate",    # taxa de vitória nos últimos 5 anos
+    "d_L2Y_winrate",    # taxa de vitória nos últimos 2 anos (mais sensível)
+]
+
+# Grupo 3 — estatísticas de luta (médias históricas pré-luta)
+FEATURES_STATS = [
+    "d_sig_strikes_landed",   # golpes significativos dados/luta
+    "d_sig_strikes_absorbed", # golpes significativos levados/luta
+    "d_td_landed",            # takedowns concluídos/luta
+    "d_td_acc",               # precisão de takedown
+    "d_sig_strike_acc",       # precisão de golpes significativos
+]
+
+# Grupo 4 — stance
 ESTILOS = ["orthodox", "southpaw", "switch", "other"]
 FEATURES_STANCE = [f"d_stance_{e}" for e in ESTILOS]
-
-# Indicador simétrico de estilos diferentes (não muda ao espelhar a luta).
 FEATURE_ESTILOS_DIF = "estilos_diferentes"
 
-# Conjunto completo de features usado pelos modelos.
-FEATURES = FEATURES_DIFF + FEATURES_STANCE + [FEATURE_ESTILOS_DIF]
+# Conjunto completo
+FEATURES = (
+    FEATURES_DIFF
+    + FEATURES_FORMA
+    + FEATURES_STATS
+    + FEATURES_STANCE
+    + [FEATURE_ESTILOS_DIF]
+)
 
-ALVO = "y"  # 1 = o lutador (coluna 'fighter') vence; 0 = perde
+ALVO = "y"  # 1 = lutador vence; 0 = perde
 
 
 def garantir_diretorios():
-    """Cria os diretórios de saída caso ainda não existam."""
     for d in (DIR_DADOS_PROC, DIR_FIGURAS, DIR_TABELAS, DIR_MODELOS, DIR_FIG_ARTIGO):
         d.mkdir(parents=True, exist_ok=True)

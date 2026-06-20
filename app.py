@@ -195,24 +195,28 @@ def fighter_record(name):
         return None
 
     last = rows.iloc[-1]
-    wins = int(last["fighter_vitorias"])
-    losses = int(last["fighter_derrotas"])
-    ko = int(last["fighter_ko"])
-    sub = int(last["fighter_sub"])
-    age = float(last["fighter_idade"]) if not pd.isna(last["fighter_idade"]) else 30.0
-    height = float(last["fighter_altura"])
-    reach = float(last["fighter_envergadura"])
-    stance = str(last["fighter_stance"])
+
+    def _f(col, default=0.0):
+        v = last.get(col, default)
+        return float(v) if not pd.isna(v) else default
 
     return {
-        "wins": wins,
-        "losses": losses,
-        "ko": ko,
-        "sub": sub,
-        "age": age,
-        "height": round(height, 1),
-        "reach": round(reach, 1),
-        "stance": stance,
+        "wins":   int(_f("fighter_vitorias")),
+        "losses": int(_f("fighter_derrotas")),
+        "ko":     int(_f("fighter_ko")),
+        "sub":    int(_f("fighter_sub")),
+        "ko_losses": int(_f("fighter_ko_losses")),
+        "age":    _f("fighter_idade", 30.0),
+        "height": round(_f("fighter_altura", 177.8), 1),
+        "reach":  round(_f("fighter_envergadura", 182.9), 1),
+        "stance": str(last.get("fighter_stance", "orthodox")),
+        "L5Y_winrate": _f("fighter_L5Y_winrate", 0.5),
+        "L2Y_winrate": _f("fighter_L2Y_winrate", 0.5),
+        "sig_strikes_landed":   _f("fighter_sig_strikes_landed"),
+        "sig_strikes_absorbed": _f("fighter_sig_strikes_absorbed"),
+        "td_landed":      _f("fighter_td_landed"),
+        "td_acc":         _f("fighter_td_acc"),
+        "sig_strike_acc": _f("fighter_sig_strike_acc"),
     }
 
 
@@ -274,23 +278,34 @@ def _taxa(num, den):
 
 
 def build_feature_vector(f, o):
-    f_taxa_ko = _taxa(f["ko"], f["wins"])
+    f_taxa_ko  = _taxa(f["ko"],  f["wins"])
     f_taxa_sub = _taxa(f["sub"], f["wins"])
     f_taxa_dec = _taxa(max(f["wins"] - f["ko"] - f["sub"], 0), f["wins"])
-    o_taxa_ko = _taxa(o["ko"], o["wins"])
+    o_taxa_ko  = _taxa(o["ko"],  o["wins"])
     o_taxa_sub = _taxa(o["sub"], o["wins"])
     o_taxa_dec = _taxa(max(o["wins"] - o["ko"] - o["sub"], 0), o["wins"])
 
     row = {
-        "d_idade": f["age"] - o["age"],
-        "d_altura": f["height"] - o["height"],
-        "d_envergadura": f["reach"] - o["reach"],
-        "d_vitorias": f["wins"] - o["wins"],
-        "d_derrotas": f["losses"] - o["losses"],
+        # Group 1 — basic differentials
+        "d_idade":        f["age"]    - o["age"],
+        "d_altura":       f["height"] - o["height"],
+        "d_envergadura":  f["reach"]  - o["reach"],
+        "d_vitorias":     f["wins"]   - o["wins"],
+        "d_derrotas":     f["losses"] - o["losses"],
         "d_lutas_totais": (f["wins"] + f["losses"]) - (o["wins"] + o["losses"]),
-        "d_taxa_ko": f_taxa_ko - o_taxa_ko,
-        "d_taxa_sub": f_taxa_sub - o_taxa_sub,
-        "d_taxa_dec": f_taxa_dec - o_taxa_dec,
+        "d_taxa_ko":      f_taxa_ko  - o_taxa_ko,
+        "d_taxa_sub":     f_taxa_sub - o_taxa_sub,
+        "d_taxa_dec":     f_taxa_dec - o_taxa_dec,
+        "d_ko_losses":    f.get("ko_losses", 0) - o.get("ko_losses", 0),
+        # Group 2 — recent form
+        "d_L5Y_winrate":  f.get("L5Y_winrate", 0.5) - o.get("L5Y_winrate", 0.5),
+        "d_L2Y_winrate":  f.get("L2Y_winrate", 0.5) - o.get("L2Y_winrate", 0.5),
+        # Group 3 — fight stats
+        "d_sig_strikes_landed":   f.get("sig_strikes_landed", 0)   - o.get("sig_strikes_landed", 0),
+        "d_sig_strikes_absorbed": f.get("sig_strikes_absorbed", 0) - o.get("sig_strikes_absorbed", 0),
+        "d_td_landed":            f.get("td_landed", 0)            - o.get("td_landed", 0),
+        "d_td_acc":               f.get("td_acc", 0)               - o.get("td_acc", 0),
+        "d_sig_strike_acc":       f.get("sig_strike_acc", 0)       - o.get("sig_strike_acc", 0),
     }
     for e in config.ESTILOS:
         row[f"d_stance_{e}"] = (1 if f["stance"] == e else 0) - (1 if o["stance"] == e else 0)
@@ -357,6 +372,14 @@ def api_predict():
             side.setdefault("losses", 0)
             side.setdefault("ko", 0)
             side.setdefault("sub", 0)
+            side.setdefault("ko_losses", 0)
+            side.setdefault("L5Y_winrate", 0.5)
+            side.setdefault("L2Y_winrate", 0.5)
+            side.setdefault("sig_strikes_landed", 0.0)
+            side.setdefault("sig_strikes_absorbed", 0.0)
+            side.setdefault("td_landed", 0.0)
+            side.setdefault("td_acc", 0.0)
+            side.setdefault("sig_strike_acc", 0.0)
 
         result = predict(red, blue)
         return jsonify({"ok": True, "data": result})
