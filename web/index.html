@@ -706,7 +706,17 @@ footer p{font-size:10px;letter-spacing:2px;color:#444;text-transform:uppercase}
   <div class="picker-close-bg" onclick="closePicker()"></div>
   <div class="picker-panel">
     <div class="picker-search">
-      <input type="text" id="picker-input" placeholder="Buscar lutador…" oninput="filterPicker()"/>
+      <select id="picker-division" onchange="pickerChangeDivision()" style="
+        width:100%;background:#1a1a1a;color:#fff;border:none;border-bottom:1px solid #333;
+        font-family:inherit;font-size:11px;font-weight:700;letter-spacing:1.5px;
+        text-transform:uppercase;padding:10px 12px;outline:none;cursor:pointer;
+        appearance:none;-webkit-appearance:none;
+        background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22 viewBox=%220 0 10 6%22><path d=%22M0 0l5 6 5-6z%22 fill=%22%23888%22/></svg>');
+        background-repeat:no-repeat;background-position:right 12px center;
+      ">
+        <option value="all">— Todas as divisões —</option>
+      </select>
+      <input type="text" id="picker-input" placeholder="Buscar lutador…" oninput="filterPicker()" style="margin-top:0"/>
     </div>
     <div class="picker-list" id="picker-list"></div>
   </div>
@@ -753,6 +763,7 @@ let state = {
   blue: null,
   pickerTarget: null, // 'red'|'blue'
   pickerItems: [],
+  pickerDivision: 'heavyweight',
   loading: false,
   titleFight: false,
 };
@@ -1112,21 +1123,45 @@ function renderCard(corner) {
 ══════════════════════════════════════════════ */
 function openPicker(corner) {
   state.pickerTarget = corner;
-  const fighters = (state.mode === 'open' || state.mode === 'custom')
-    ? Object.values(state.rankings).flat()
-    : (state.rankings[state.division] || []);
 
-  // Deduplicate
-  const seen = new Set();
-  state.pickerItems = fighters.filter(f => {
-    if (seen.has(f.name)) return false;
-    seen.add(f.name); return true;
+  // Populate division select
+  const sel = document.getElementById('picker-division');
+  sel.innerHTML = '<option value="all">— Todas as divisões —</option>';
+  DIVISIONS.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d.key;
+    opt.textContent = d.label;
+    sel.appendChild(opt);
   });
+  // Default to current division
+  sel.value = state.division;
+
+  state.pickerDivision = state.division;
+  state.pickerItems = buildPickerItems(state.division);
 
   document.getElementById('picker-input').value = '';
   renderPickerList(state.pickerItems);
   document.getElementById('picker-overlay').classList.add('show');
   document.getElementById('picker-input').focus();
+}
+
+function buildPickerItems(divKey) {
+  const fighters = divKey === 'all'
+    ? Object.values(state.rankings).flat()
+    : (state.rankings[divKey] || []);
+  const seen = new Set();
+  return fighters.filter(f => {
+    if (seen.has(f.name)) return false;
+    seen.add(f.name); return true;
+  });
+}
+
+function pickerChangeDivision() {
+  const divKey = document.getElementById('picker-division').value;
+  state.pickerDivision = divKey;
+  state.pickerItems = buildPickerItems(divKey);
+  document.getElementById('picker-input').value = '';
+  renderPickerList(state.pickerItems);
 }
 
 function closePicker() {
@@ -1135,7 +1170,10 @@ function closePicker() {
 
 function filterPicker() {
   const q = document.getElementById('picker-input').value.toLowerCase();
-  const filtered = state.pickerItems.filter(f => f.name.toLowerCase().includes(q));
+  const base = q
+    ? buildPickerItems(state.pickerDivision || state.division)
+    : state.pickerItems;
+  const filtered = q ? base.filter(f => f.name.toLowerCase().includes(q)) : base;
   renderPickerList(filtered);
 }
 
@@ -1151,7 +1189,7 @@ function renderPickerList(fighters) {
     item.className = 'picker-item';
     const rankLabel = f.rank === 'C' ? 'C' : f.rank;
     const rankClass = f.is_champ ? 'champ-r' : '';
-    const divLabel = state.mode === 'open' && f.division
+    const divLabel = f.division
       ? `<span style="color:#d10a10;margin-left:6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase">${DIVISIONS.find(d=>d.key===f.division)?.label||f.division}</span>`
       : '';
     const subText = f.is_champ ? 'Campeão' : 'Ranking #' + f.rank;

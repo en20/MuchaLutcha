@@ -1,6 +1,7 @@
 # Dados brutos volumosos e artefatos
 reference/
 data/raw/*.csv
+data/raw/*.json
 data/processed/*.csv
 results/models/*.joblib
 
