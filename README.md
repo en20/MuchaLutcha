@@ -18,7 +18,105 @@ Previsão do vencedor de lutas do UFC como **classificação binária**, compara
 | SVM (RBF) | 0,622 |
 | Baseline (classe majoritária) | ~0,500 |
 
-Atributos mais determinantes: **diferença de vitórias/derrotas**, **forma recente (L5Y/L2Y)** e **taxas de finalização por método**.
+---
+
+## Como a previsão é calculada
+
+### 1. Dados de entrada
+
+O modelo nunca vê os dois lutadores separadamente. Ele recebe um **vetor diferencial**: para cada atributo, calcula-se `valor_do_lutador − valor_do_oponente`. Isso torna a representação antissimétrica — inverter os dois lutadores inverte o sinal de todas as features e o alvo — e elimina viés de canto (vermelho vs azul).
+
+```
+Exemplo: Islam Makhachev (27W-3L) vs Charles Oliveira (35W-10L)
+
+d_vitorias     = 27 − 35 = −8
+d_derrotas     = 3  − 10 = −7   ← menos derrotas → favorece Makhachev
+d_L5Y_winrate  = 1.0 − 0.75 = +0.25
+d_sig_strikes_absorbed = 3.1 − 5.9 = −2.8  ← absorve menos → favorece Makhachev
+...
+```
+
+### 2. Os 23 atributos diferenciais
+
+| Grupo | Atributos | Sinal esperado |
+|---|---|---|
+| **Cartel** | `d_vitorias`, `d_derrotas`, `d_lutas_totais` | + vitórias, − derrotas favorecem |
+| **Método de vitória** | `d_taxa_ko`, `d_taxa_sub`, `d_taxa_dec` | dependente do estilo |
+| **Chin / Resistência** | `d_ko_losses`, `d_dec_rate_overall` | menos KO losses e mais decisões favorecem |
+| **Forma recente** | `d_L5Y_winrate`, `d_L2Y_winrate` | + winrate recente favorece |
+| **Striking** | `d_sig_strikes_landed`, `d_sig_strikes_absorbed`, `d_sig_strike_acc` | mais acertos e menos absorvidos favorecem |
+| **Wrestling** | `d_td_landed`, `d_td_acc` | mais takedowns favorecem |
+| **Físico** | `d_idade`, `d_altura`, `d_envergadura` | envergadura e altura favorecem |
+| **Stance** | `d_stance_orthodox/southpaw/switch/other`, `estilos_diferentes` | southpaw leve vantagem |
+
+### 3. Os cinco modelos
+
+Cada modelo recebe o mesmo vetor de 23 features e retorna uma probabilidade entre 0 e 1:
+
+| Modelo | Como funciona |
+|---|---|
+| **Regressão Logística** | Combinação linear das features com pesos aprendidos. Transparente e rápida. Melhor AUC do ensemble. |
+| **Random Forest** | Conjunto de 100+ árvores de decisão. Cada árvore vota; maioria decide. Robusto a outliers. |
+| **XGBoost** | Gradient boosting: árvores construídas sequencialmente, cada uma corrigindo os erros da anterior. |
+| **SVM (RBF)** | Separa os exemplos no espaço de features usando um hiperplano de margem máxima com kernel radial. |
+| **Rede Neural (MLP)** | Duas camadas ocultas de 32 neurônios cada, com ativação ReLU. Captura interações não-lineares. |
+
+### 4. Ensemble
+
+A probabilidade final é a **média simples** das cinco probabilidades:
+
+```
+P(lutador A vence) = média(logreg, rf, xgboost, svm, mlp)
+```
+
+O lutador com P > 50% é declarado vencedor previsto.
+
+### 5. Pesos aprendidos (Regressão Logística)
+
+Os coeficientes abaixo mostram o que o modelo considera mais importante. Um coeficiente positivo favorece o lutador A; negativo favorece o oponente:
+
+| Feature | Coef. | Interpretação |
+|---|---|---|
+| `d_idade` | −0,315 | **Mais velho tende a perder** (artefato de fim de carreira no dataset) |
+| `d_sig_strikes_absorbed` | −0,221 | Absorver mais golpes é sinal forte de derrota |
+| `d_L5Y_winrate` | +0,148 | Forma nos últimos 5 anos é o melhor preditor positivo |
+| `d_vitorias` | +0,146 | Cartel total importa, mas menos que forma recente |
+| `d_td_landed` | +0,140 | Wrestling é relevante |
+| `d_sig_strike_acc` | +0,130 | Precisão no striking favorece |
+| `d_sig_strikes_landed` | +0,126 | Volume ofensivo favorece |
+| `d_derrotas` | −0,091 | Mais derrotas no histórico desfavorece |
+
+### 6. Ajuste para lutas de título (5 rounds)
+
+Em lutas de 5 rounds, o atributo `d_dec_rate_overall` é multiplicado por **3×** antes da inferência:
+
+```python
+# dec_rate_overall = % de todas as lutas (W+L) que foram a decisão
+# Proxy de resistência aeróbica e capacidade de manter o ritmo nos rounds finais
+if title_fight:
+    X[d_dec_rate_overall] *= 3.0
+```
+
+Isso amplifica a vantagem de fighters que historicamente vão a decisão — indicativo de que aguentam o ritmo de lutas longas.
+
+### 7. Split temporal e treinamento
+
+O dataset é dividido **cronologicamente** (não aleatoriamente) para simular uso real:
+
+```
+Treino: 80% das lutas mais antigas  → 13.634 amostras (espelhadas) · 2008–2024
+Teste:  20% das lutas mais recentes → 1.705 amostras               · 2024–2026
+```
+
+O espelhamento consiste em duplicar cada luta trocando lutador/oponente e invertendo o alvo — isso dobra o dataset e garante que o modelo não aprenda viés de posição.
+
+Hiperparâmetros são selecionados por `GridSearchCV` com 5-fold estratificado no conjunto de treino usando AUC-ROC como métrica. O conjunto de teste nunca é tocado durante a seleção.
+
+<!-- IMAGENS: adicione abaixo -->
+<!-- ![Pipeline]() -->
+<!-- ![Curva ROC]() -->
+<!-- ![Feature Importance]() -->
+<!-- ![Matriz de Confusão]() -->
 
 ---
 
@@ -26,27 +124,13 @@ Atributos mais determinantes: **diferença de vitórias/derrotas**, **forma rece
 
 Interface completa para simular confrontos entre lutadores reais ou criados pelo usuário:
 
-- **Classic mode** — seleciona lutadores de qualquer divisão, com aviso quando cruza categorias
-- **(Open)heimmer mode** — qualquer lutador vs qualquer lutador, sem restrições
-- **Picker com filtro de divisão** — ao selecionar um fighter, escolha a categoria desejada no dropdown; suporte a "Todas as divisões" para busca livre
-- **Custom Fighter** — crie um lutador fictício com stats completas e teste contra lutadores reais (acessível pelo menu no canto superior direito)
+- **Classic mode** — seleciona lutadores da divisão escolhida
+- **(Open)heimmer mode** — qualquer lutador vs qualquer lutador, sem restrições de peso
+- **Picker com filtro de divisão** — dropdown no picker permite escolher qualquer categoria na hora de montar cada corner, independente do modo
+- **Custom Fighter** — crie um lutador fictício com stats completas e teste contra lutadores reais (menu superior direito)
 - **Fotos dos atletas** — carregadas assincronamente da UFC.com
-- **Title Fight toggle** — alterna entre 3 e 5 rounds; fighters com maior taxa de lutas por decisão recebem boost no algoritmo em lutas de título
+- **Title Fight toggle** — alterna 3 vs 5 rounds e ativa o boost de `dec_rate_overall`
 - **Previsão em ensemble** — média dos 5 modelos com detalhamento por modelo e comparativo de atributos
-
----
-
-## Features do modelo (23 atributos diferenciais)
-
-| Grupo | Atributos |
-|---|---|
-| Básico | idade, altura, envergadura, vitórias, derrotas, lutas totais |
-| Método | taxa KO, taxa SUB, taxa DEC, KO losses, dec_rate_overall |
-| Forma recente | winrate nos últimos 5 anos, winrate nos últimos 2 anos |
-| Strike stats | sig. strikes dados/luta, absorvidos/luta, takedowns, td_acc, strike_acc |
-| Stance | orthodox, southpaw, switch, other (indicadores diferenciais) |
-
-`dec_rate_overall` = % de todas as lutas (W+L) que foram a decisão — proxy de resistência para 5 rounds. Em title fights, esse atributo recebe um boost de 3× no momento da inferência.
 
 ---
 
@@ -54,14 +138,13 @@ Interface completa para simular confrontos entre lutadores reais ou criados pelo
 
 ```
 src/              pipeline de ML (data_prep → features → eda → train → evaluate)
-data/raw/         CSVs de entrada (ufc_fights.csv, fighter_stats.csv, fighter_cache.json)
+data/raw/         CSVs de entrada (ufc_fights.csv, fighter_stats.csv)
 data/processed/   dataset limpo + matrizes de treino/teste
 results/          figuras, tabelas e modelos treinados (.joblib)
 scripts/          utilitários (update_dataset.py — scraping de novos eventos)
 web/              frontend do web app (index.html)
 app.py            servidor Flask (API + web app)
 predict.py        preditor interativo via terminal
-paper/            artigo em LaTeX
 ```
 
 ---
@@ -190,15 +273,3 @@ python predict.py
 - **Boost de título fight**: em lutas de 5 rounds, o atributo `d_dec_rate_overall` é multiplicado por 3× na inferência, favorecendo fighters com histórico de ir a decisão — proxy de resistência aeróbica.
 - **Scraping com Playwright**: ufcstats.com usa Cloudflare com desafio JavaScript; requisições simples (curl/requests) retornam página de bloqueio. O Playwright executa um browser Chromium headless que resolve o desafio automaticamente.
 - **Semente fixa** `SEMENTE = 42` em `src/config.py` para reprodutibilidade total.
-
----
-
-## Artigo (PDF)
-
-```bash
-cp results/tables/metricas_teste.tex paper/metricas_teste.tex
-cd paper
-tectonic main.tex   # gera paper/main.pdf
-```
-
-Ou suba a pasta `paper/` no [Overleaf](https://overleaf.com).
