@@ -513,7 +513,15 @@ footer p{font-size:10px;letter-spacing:2px;color:#444;text-transform:uppercase}
 <section class="tape-section">
   <div class="tape-header">
     <span class="tape-title">Tale of the Tape</span>
-    <span class="tape-meta" id="tape-meta"></span>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button id="rounds-toggle" onclick="toggleRounds()" style="
+        background:transparent;border:1px solid #444;color:#aaa;
+        font-size:10px;font-family:inherit;font-weight:700;letter-spacing:1.5px;
+        text-transform:uppercase;padding:4px 10px;cursor:pointer;border-radius:2px;
+        transition:border-color .15s,color .15s;
+      ">3 RD</button>
+      <span class="tape-meta" id="tape-meta"></span>
+    </div>
   </div>
 
   <div class="fighters-row">
@@ -663,6 +671,7 @@ let state = {
   pickerTarget: null, // 'red'|'blue'
   pickerItems: [],
   loading: false,
+  titleFight: false,
 };
 
 /* ══════════════════════════════════════════════
@@ -791,8 +800,23 @@ function esc(s) { return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
 
 function updateTapeMeta() {
   const label = DIVISIONS.find(d => d.key === state.division)?.label || '';
-  const rounds = DIVISION_ROUNDS[state.division] || 3;
+  const rounds = state.titleFight ? 5 : 3;
   document.getElementById('tape-meta').textContent = `${label.toUpperCase()} · ${rounds} RD × 5 MIN`;
+  const btn = document.getElementById('rounds-toggle');
+  if (state.titleFight) {
+    btn.textContent = '5 RD — TITLE FIGHT';
+    btn.style.borderColor = '#d4af37';
+    btn.style.color = '#d4af37';
+  } else {
+    btn.textContent = '3 RD — NORMAL FIGHT';
+    btn.style.borderColor = '#444';
+    btn.style.color = '#aaa';
+  }
+}
+
+function toggleRounds() {
+  state.titleFight = !state.titleFight;
+  updateTapeMeta();
 }
 
 /* ══════════════════════════════════════════════
