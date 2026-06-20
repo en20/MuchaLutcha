@@ -34,6 +34,9 @@ ANO_MINIMO = 2008
 # Atributos
 # ---------------------------------------------------------------------------
 
+# Fator de amplificação da taxa de decisão em lutas de título (5 rounds)
+TITLE_FIGHT_DEC_BOOST = 3.0
+
 # Grupo 1 — diferenciais básicos (lutador - oponente)
 FEATURES_DIFF = [
     "d_idade",
@@ -45,7 +48,8 @@ FEATURES_DIFF = [
     "d_taxa_ko",
     "d_taxa_sub",
     "d_taxa_dec",
-    "d_ko_losses",      # chin: derrotas por nocaute é proxy de queixo ruim
+    "d_ko_losses",          # chin: derrotas por nocaute é proxy de queixo ruim
+    "d_dec_rate_overall",   # % de lutas (W+L) que foram a decisão — proxy de resistência
 ]
 
 # Grupo 2 — forma recente (últimas 5 e 2 lutas)

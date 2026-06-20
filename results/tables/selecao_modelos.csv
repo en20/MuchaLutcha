@@ -1,6 +1,6 @@
 modelo,auc_cv,tempo_s,melhores_params
-logreg,0.626,1.7,"{""clf__C"": 1.0}"
-rf,0.6224,43.1,"{""clf__max_depth"": 6, ""clf__max_features"": 0.5, ""clf__min_samples_leaf"": 5}"
-xgboost,0.6223,2.8,"{""clf__learning_rate"": 0.03, ""clf__max_depth"": 3, ""clf__reg_lambda"": 1.0}"
-mlp,0.6143,2.7,"{""clf__alpha"": 0.0001, ""clf__hidden_layer_sizes"": [64, 32]}"
-svm,0.6123,109.7,"{""clf__C"": 1.0, ""clf__gamma"": ""scale""}"
+logreg,0.6336,1.7,"{""clf__C"": 0.1}"
+xgboost,0.6292,4.3,"{""clf__learning_rate"": 0.03, ""clf__max_depth"": 3, ""clf__reg_lambda"": 5.0}"
+rf,0.6231,83.9,"{""clf__max_depth"": 6, ""clf__max_features"": ""sqrt"", ""clf__min_samples_leaf"": 1}"
+svm,0.6179,114.9,"{""clf__C"": 1.0, ""clf__gamma"": ""scale""}"
+mlp,0.6172,2.0,"{""clf__alpha"": 0.001, ""clf__hidden_layer_sizes"": [64, 32]}"

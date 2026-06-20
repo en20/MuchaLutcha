@@ -22,7 +22,8 @@ def construir_features(df):
     f["d_vitorias"]     = df["fighter_vitorias"]    - df["opponent_vitorias"]
     f["d_derrotas"]     = df["fighter_derrotas"]    - df["opponent_derrotas"]
     f["d_lutas_totais"] = df["fighter_lutas_totais"]- df["opponent_lutas_totais"]
-    f["d_ko_losses"]    = df["fighter_ko_losses"]   - df["opponent_ko_losses"]
+    f["d_ko_losses"]         = df["fighter_ko_losses"]        - df["opponent_ko_losses"]
+    f["d_dec_rate_overall"]  = df["fighter_dec_rate_overall"] - df["opponent_dec_rate_overall"]
 
     # Taxas de vitória por método
     for lado in ("fighter", "opponent"):

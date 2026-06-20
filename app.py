@@ -217,6 +217,7 @@ def fighter_record(name):
         "td_landed":      _f("fighter_td_landed"),
         "td_acc":         _f("fighter_td_acc"),
         "sig_strike_acc": _f("fighter_sig_strike_acc"),
+        "dec_rate_overall": _f("fighter_dec_rate_overall", 0.5),
     }
 
 
@@ -296,7 +297,8 @@ def build_feature_vector(f, o):
         "d_taxa_ko":      f_taxa_ko  - o_taxa_ko,
         "d_taxa_sub":     f_taxa_sub - o_taxa_sub,
         "d_taxa_dec":     f_taxa_dec - o_taxa_dec,
-        "d_ko_losses":    f.get("ko_losses", 0) - o.get("ko_losses", 0),
+        "d_ko_losses":         f.get("ko_losses", 0)         - o.get("ko_losses", 0),
+        "d_dec_rate_overall":  f.get("dec_rate_overall", 0.5) - o.get("dec_rate_overall", 0.5),
         # Group 2 — recent form
         "d_L5Y_winrate":  f.get("L5Y_winrate", 0.5) - o.get("L5Y_winrate", 0.5),
         "d_L2Y_winrate":  f.get("L2Y_winrate", 0.5) - o.get("L2Y_winrate", 0.5),
@@ -314,8 +316,15 @@ def build_feature_vector(f, o):
     return np.array([row[feat] for feat in config.FEATURES], dtype=float)
 
 
-def predict(f_stats, o_stats):
+def predict(f_stats, o_stats, title_fight: bool = False):
     X = build_feature_vector(f_stats, o_stats).reshape(1, -1)
+
+    if title_fight:
+        # Boost the d_dec_rate_overall feature (endurance proxy) for 5-round fights.
+        # The boost amplifies the advantage of the fighter with more decision experience.
+        idx = config.FEATURES.index("d_dec_rate_overall")
+        X[0, idx] *= config.TITLE_FIGHT_DEC_BOOST
+
     probs = {}
     for key, model in _models.items():
         probs[key] = float(model.predict_proba(X)[0, 1])
@@ -380,8 +389,10 @@ def api_predict():
             side.setdefault("td_landed", 0.0)
             side.setdefault("td_acc", 0.0)
             side.setdefault("sig_strike_acc", 0.0)
+            side.setdefault("dec_rate_overall", 0.5)
 
-        result = predict(red, blue)
+        title_fight = bool(body.get("title_fight", False))
+        result = predict(red, blue, title_fight=title_fight)
         return jsonify({"ok": True, "data": result})
     except KeyError as e:
         return jsonify({"ok": False, "error": f"Missing field: {e}"}), 400

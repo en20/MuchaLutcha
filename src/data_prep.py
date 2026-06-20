@@ -94,6 +94,7 @@ def preparar():
         ko_w     = pd.to_numeric(df[f"{prefixo}_ko_wins"],    errors="coerce").fillna(0)
         sub_w    = pd.to_numeric(df[f"{prefixo}_sub_wins"],   errors="coerce").fillna(0)
         ko_l     = pd.to_numeric(df[f"{prefixo}_ko_losses"],  errors="coerce").fillna(0)
+        sub_l    = pd.to_numeric(df[f"{prefixo}_sub_losses"], errors="coerce").fillna(0)
 
         # --- forma recente ---
         L5Y_w = pd.to_numeric(df[f"{prefixo}_L5Y_wins"],   errors="coerce").fillna(0)
@@ -130,12 +131,18 @@ def preparar():
             elif col_name == "altura":  saida[f"{lado}_altura"]      = serie.values
             else:                       saida[f"{lado}_envergadura"]  = serie.values
 
-        saida[f"{lado}_vitorias"]      = vitorias.values
-        saida[f"{lado}_derrotas"]      = derrotas.values
-        saida[f"{lado}_lutas_totais"]  = (vitorias + derrotas).values
-        saida[f"{lado}_ko"]            = ko_w.values
-        saida[f"{lado}_sub"]           = sub_w.values
-        saida[f"{lado}_ko_losses"]     = ko_l.values
+        # dec_rate_overall: lutas que foram a decisão (W+L) / total lutas
+        dec_w = (vitorias - ko_w - sub_w).clip(lower=0)
+        dec_l = (derrotas - ko_l - sub_l).clip(lower=0)
+        total = (vitorias + derrotas).fillna(0)
+
+        saida[f"{lado}_vitorias"]         = vitorias.values
+        saida[f"{lado}_derrotas"]         = derrotas.values
+        saida[f"{lado}_lutas_totais"]     = total.values
+        saida[f"{lado}_ko"]               = ko_w.values
+        saida[f"{lado}_sub"]              = sub_w.values
+        saida[f"{lado}_ko_losses"]        = ko_l.values
+        saida[f"{lado}_dec_rate_overall"] = safe_rate(dec_w + dec_l, total).values
         saida[f"{lado}_L5Y_winrate"]   = safe_rate(L5Y_w, L5Y_w + L5Y_l).values
         saida[f"{lado}_L2Y_winrate"]   = safe_rate(L2Y_w, L2Y_w + L2Y_l).values
         saida[f"{lado}_sig_strikes_landed"]   = sig_l.values
