@@ -51,8 +51,7 @@ nav{
 }
 .nav-links a:hover{color:#fff}
 .nav-links a.active{color:var(--red)}
-.nav-search{font-size:18px;color:#888;cursor:pointer;transition:color .2s}
-.nav-search:hover{color:#fff}
+.nav-search{display:none}
 
 /* ── Hero ───────────────────────────────────────── */
 .hero{
@@ -84,12 +83,20 @@ nav{
 .mode-tab{
   padding:20px 32px;cursor:pointer;
   border-bottom:3px solid transparent;
-  transition:border-color .2s;
+  transition:background .15s, border-color .2s;
 }
-.mode-tab:hover{background:#efefef}
-.mode-tab.active{border-bottom-color:var(--red)}
+.mode-tab:hover{background:#ebebeb}
+.mode-tab:active{background:#e0e0e0}
+.mode-tab.active{
+  background:var(--red);
+  border-bottom-color:var(--red-hover);
+}
+.mode-tab.active:hover{background:#c00909}
+.mode-tab.active:active{background:#a80808}
 .mode-tab h3{font-size:15px;font-weight:900;color:#111;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.mode-tab.active h3{color:#fff}
 .mode-tab p{font-size:11px;letter-spacing:1.5px;color:#888;text-transform:uppercase}
+.mode-tab.active p{color:rgba(255,255,255,.7)}
 
 /* ── Division selector ──────────────────────────── */
 .division-bar{
@@ -266,7 +273,7 @@ nav{
 .roster-divider{border:none;border-top:2px solid #111;margin:10px 0 20px}
 
 .roster-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  display:grid;grid-template-columns:1fr 1fr;gap:0 48px;
 }
 .roster-item{
   display:flex;align-items:center;gap:12px;
@@ -487,7 +494,11 @@ footer p{font-size:10px;letter-spacing:2px;color:#444;text-transform:uppercase}
     <h3>Classic</h3><p>Mesma categoria</p>
   </div>
   <div class="mode-tab" data-mode="open" onclick="setMode('open')">
-    <h3>(Open)heimmer</h3><p>Qualquer um vs qualquer um</p>
+    <h3>(Open)heimmer</h3>
+    <p>Qualquer um vs qualquer um</p>
+    <p id="open-warn" style="display:none;margin-top:6px;font-size:10px;letter-spacing:1px;color:rgba(255,200,0,.9);font-weight:700;">
+      ⚠ Cruza categorias de peso — previsão pouco confiável
+    </p>
   </div>
 </div>
 
@@ -714,8 +725,14 @@ function setMode(mode) {
     t.classList.toggle('active', t.dataset.mode === mode);
   });
   const hint = document.getElementById('action-hint');
-  if (mode === 'classic') hint.textContent = 'Mesma divisão obrigatória — booking legal.';
-  else hint.textContent = '(Open)heimmer — qualquer lutador, qualquer categoria.';
+  const openWarn = document.getElementById('open-warn');
+  if (mode === 'classic') {
+    hint.textContent = 'Mesma divisão obrigatória — booking legal.';
+    openWarn.style.display = 'none';
+  } else {
+    hint.textContent = '(Open)heimmer — qualquer lutador, qualquer categoria.';
+    openWarn.style.display = 'block';
+  }
 }
 
 /* ══════════════════════════════════════════════
@@ -737,11 +754,20 @@ function renderRoster() {
   }
 
   grid.innerHTML = '';
-  fighters.forEach((f, i) => {
-    const item = document.createElement('div');
-    item.className = 'roster-item';
+
+  // Split into left (C, 1, 3, 5 …) and right (2, 4, 6 …) columns
+  // Champ + odd-indexed ranked fighters on left; even-indexed on right
+  const ranked = fighters.filter(f => !f.is_champ);
+  const champ  = fighters.find(f => f.is_champ);
+  const left   = champ ? [champ, ...ranked.filter((_,i) => i % 2 === 0)] : ranked.filter((_,i) => i % 2 === 0);
+  const right  = ranked.filter((_,i) => i % 2 === 1);
+  const maxRows = Math.max(left.length, right.length);
+
+  function makeItem(f) {
+    if (!f) return '<div class="roster-item" style="border:none;pointer-events:none"></div>';
     const rankLabel = f.is_champ ? 'C' : f.rank;
-    item.innerHTML = `
+    const rankNum   = f.rank === 'C' ? '"C"' : f.rank;
+    return `<div class="roster-item" onclick="quickAdd('${esc(f.name)}','${esc(f.slug)}',${rankNum})">
       <div class="roster-item-rank${f.is_champ?' champ':''}">${rankLabel}</div>
       <div class="roster-item-info">
         <div class="roster-item-name">${f.name}</div>
@@ -749,12 +775,15 @@ function renderRoster() {
       </div>
       <div class="roster-item-ranking">${f.rank === 'C' ? '' : '#' + f.rank}</div>
       <div class="add-corner">
-        <button class="add-corner-btn add-red" onclick="selectFromRoster(event,'red','${esc(f.name)}','${esc(f.slug)}',${f.rank==='C'?'"C"':f.rank})">Red</button>
-        <button class="add-corner-btn add-blue" onclick="selectFromRoster(event,'blue','${esc(f.name)}','${esc(f.slug)}',${f.rank==='C'?'"C"':f.rank})">Blue</button>
-      </div>`;
-    item.addEventListener('click', () => quickAdd(f.name, f.slug, f.rank));
-    grid.appendChild(item);
-  });
+        <button class="add-corner-btn add-red" onclick="selectFromRoster(event,'red','${esc(f.name)}','${esc(f.slug)}',${rankNum})">Red</button>
+        <button class="add-corner-btn add-blue" onclick="selectFromRoster(event,'blue','${esc(f.name)}','${esc(f.slug)}',${rankNum})">Blue</button>
+      </div>
+    </div>`;
+  }
+
+  for (let i = 0; i < maxRows; i++) {
+    grid.innerHTML += makeItem(left[i]) + makeItem(right[i]);
+  }
 }
 
 function esc(s) { return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
