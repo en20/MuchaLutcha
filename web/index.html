@@ -568,6 +568,14 @@ footer p{font-size:10px;letter-spacing:2px;color:#444;text-transform:uppercase}
       <div class="modal-winner-name" id="modal-winner-name">—</div>
       <div class="modal-winner-prob" id="modal-winner-prob">—%</div>
     </div>
+    <div id="modal-warning" style="display:none;padding:10px 28px;background:#1a1000;border-bottom:1px solid #3a2800;">
+      <p style="font-size:11px;letter-spacing:1px;color:#c8860a;">
+        ⚠ <strong>(OPEN)HEIMMER WARNING</strong> — este confronto cruza categorias de peso.
+        O modelo foi treinado apenas em lutas reais da UFC, todas dentro da mesma divisão.
+        Diferenças extremas de tamanho/cartel estão fora do alcance do treino —
+        a previsão abaixo tem precisão reduzida.
+      </p>
+    </div>
     <div class="prob-bar-wrap">
       <div class="prob-bar-names">
         <span class="name-left" id="bar-name-left">—</span>
@@ -1038,6 +1046,8 @@ function showResult(data) {
       </div>`;
   });
 
+  document.getElementById('modal-warning').style.display =
+    state.mode === 'open' ? 'block' : 'none';
   document.getElementById('modal-overlay').classList.add('show');
 }
 
