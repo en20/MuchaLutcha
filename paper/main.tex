@@ -34,18 +34,23 @@ notoriamente difícil, dada a natureza explosiva do esporte. Neste trabalho
 formulamos a previsão do vencedor como um problema de classificação binária
 supervisionada e comparamos cinco modelos de aprendizagem de máquina ---
 Regressão Logística, Random Forest, XGBoost, Máquinas de Vetores de Suporte
-(SVM) e uma Rede Neural (MLP) --- sobre dados reais de \textbf{7.827 lutas}
-disputadas entre 1993 e 2024, coletadas do \texttt{ufcstats.com}. A partir dos
-atributos pré-luta dos atletas (idade, altura, envergadura, cartel, número de
-lutas, estilo de luta e taxas de vitória por nocaute, finalização e decisão),
-construímos uma representação \emph{diferencial} e \emph{antissimétrica} entre
-os dois lutadores, e adotamos uma avaliação por divisão temporal para simular o
-uso real do sistema. O melhor modelo (Random Forest) atingiu
-\textbf{60,2\% de acurácia} e \textbf{AUC-ROC de 0,637} no conjunto de teste
-(lutas de 2021--2024), superando com folga os baselines, mas confirmando o
-baixo teto de previsibilidade do esporte reportado na literatura. A análise de
-importância indica que a \emph{diferença de idade} e a \emph{diferença de
-derrotas} são os fatores mais determinantes.
+(SVM) e uma Rede Neural (MLP) --- sobre dados reais de \textbf{7.004 lutas}
+disputadas entre 2008 e 2024, coletadas do \texttt{ufcstats.com}. A partir dos
+atributos pré-luta dos atletas, construímos uma representação \emph{diferencial}
+e \emph{antissimétrica} entre os dois lutadores com \textbf{23 atributos},
+incluindo --- além das características físicas e de cartel --- estatísticas de
+desempenho dentro do octógono (golpes significativos dados e absorvidos,
+quedas e precisão), indicadores de forma recente (taxas de vitória nos últimos
+2 e 5 anos) e proxies de durabilidade (derrotas por nocaute e taxa de lutas que
+vão à decisão). Adotamos uma avaliação por divisão temporal para simular o uso
+real do sistema. O melhor modelo (Random Forest) atingiu \textbf{62,5\% de
+acurácia} e \textbf{AUC-ROC de 0,675} no conjunto de teste (lutas de
+2022--2024), superando com folga os baselines e situando-se no teto de
+previsibilidade do esporte reportado na literatura. A análise de importância
+indica que a \emph{diferença de idade} permanece o fator mais determinante, mas
+que as novas estatísticas de luta --- em especial os \emph{golpes
+significativos absorvidos} e a \emph{precisão de golpes} --- figuram entre os
+atributos mais informativos.
 \end{abstract}
 
 \section{Introdução}
@@ -65,11 +70,13 @@ Como referência metodológica e fonte de dados utilizamos o projeto público
 
 Os objetivos do trabalho são: (i) montar um conjunto de dados real e limpo de
 lutas do UFC; (ii) propor uma representação diferencial e antissimétrica que
-elimine o viés de qual lutador é apresentado primeiro; (iii) treinar e comparar
-cinco modelos de aprendizagem de máquina sob uma metodologia rigorosa de
-avaliação temporal; e (iv) interpretar quais atributos mais influenciam o
-resultado. A motivação é tanto prática (apoio a análises esportivas e de
-apostas) quanto científica (quantificar o limite de previsibilidade do MMA).
+elimine o viés de qual lutador é apresentado primeiro; (iii) enriquecer essa
+representação com atributos de desempenho intra-octógono e de forma recente;
+(iv) treinar e comparar cinco modelos de aprendizagem de máquina sob uma
+metodologia rigorosa de avaliação temporal; e (v) interpretar quais atributos
+mais influenciam o resultado. A motivação é tanto prática (apoio a análises
+esportivas e de apostas) quanto científica (quantificar o limite de
+previsibilidade do MMA).
 
 \section{Fundamentação Teórica}
 
@@ -86,30 +93,56 @@ sobre o outro, e não os valores absolutos.
 Utilizamos dois arquivos do projeto \emph{Punch Prophecy}: \texttt{ufc\_fights.csv},
 com uma linha por luta e estatísticas \emph{cumulativas pré-luta} de cada
 atleta, e \texttt{fighter\_stats.csv}, com atributos físicos por lutador
-(2.539 atletas). Após descartar empates e resultados anulados, restaram
-\textbf{7.827 lutas} válidas, disputadas entre 1993 e 2024.
+(2.538 atletas). Partindo de 7.961 lutas brutas, descartamos empates e
+resultados anulados e restringimos a análise às lutas a partir de
+\textbf{2008}, ano a partir do qual as estatísticas detalhadas de desempenho
+(golpes significativos, quedas e precisões) passam a ter boa cobertura. Após
+esses filtros, restaram \textbf{7.004 lutas} válidas, disputadas entre 2008 e
+2024.
 
-Para cada lutador foram considerados os atributos definidos pelo grupo, listados
-na Tabela~\ref{tab:atributos}. A saída do problema é o resultado da luta
-(vitória/derrota do lutador de referência).
+Para cada lutador foram considerados os atributos definidos pelo grupo,
+organizados em quatro grupos e listados na Tabela~\ref{tab:atributos}. A saída
+do problema é o resultado da luta (vitória/derrota do lutador de referência).
 
 \begin{table}[t]
 \centering
-\caption{Atributos utilizados (medidos para cada lutador antes da luta).}
+\caption{Atributos utilizados (medidos para cada lutador antes da luta),
+organizados por grupo.}
 \label{tab:atributos}
 \begin{tabular}{ll}
 \toprule
 Atributo & Descrição \\
+\midrule
+\multicolumn{2}{l}{\emph{Grupo 1 --- diferenciais básicos}} \\
 \midrule
 Idade & Idade do atleta na data da luta (anos) \\
 Altura & Altura (cm) \\
 Envergadura & Alcance dos braços (cm) \\
 Vitórias / Derrotas & Cartel acumulado no UFC \\
 Lutas totais & Número de lutas anteriores (vitórias + derrotas) \\
-Estilo de luta & \emph{Stance}: orthodox, southpaw, switch ou outro \\
 Taxa de nocaute & Fração das vitórias obtidas por KO/TKO \\
 Taxa de finalização & Fração das vitórias obtidas por finalização \\
 Taxa de decisão & Fração das vitórias obtidas por decisão dos juízes \\
+Derrotas por nocaute & Nº de derrotas por KO/TKO (proxy de resistência ao golpe) \\
+Taxa de ida à decisão & Fração das lutas (V+D) decididas nos juízes (proxy de durabilidade) \\
+\midrule
+\multicolumn{2}{l}{\emph{Grupo 2 --- forma recente}} \\
+\midrule
+Win-rate (5 anos) & Taxa de vitória nas lutas dos últimos 5 anos \\
+Win-rate (2 anos) & Taxa de vitória nas lutas dos últimos 2 anos (mais sensível) \\
+\midrule
+\multicolumn{2}{l}{\emph{Grupo 3 --- estatísticas de luta (médias pré-luta)}} \\
+\midrule
+Golpes signif.\ dados & Golpes significativos conectados por luta \\
+Golpes signif.\ absorvidos & Golpes significativos recebidos por luta \\
+Takedowns concluídos & Quedas bem-sucedidas por luta \\
+Precisão de takedown & Fração de tentativas de queda bem-sucedidas \\
+Precisão de golpes & Fração de golpes significativos conectados \\
+\midrule
+\multicolumn{2}{l}{\emph{Grupo 4 --- estilo de luta}} \\
+\midrule
+Estilo de luta & \emph{Stance}: orthodox, southpaw, switch ou outro \\
+Estilos diferentes & Indicador simétrico de \emph{stances} distintos \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -124,9 +157,10 @@ relativamente baixo: o favorito das casas vence tipicamente em torno de
 60--65\% das vezes, o que estabelece uma referência realista para qualquer
 modelo. Nosso trabalho se diferencia ao (i) comparar de forma controlada cinco
 famílias de modelos, (ii) adotar uma representação diferencial antissimétrica
-com aumento de dados por espelhamento, e (iii) usar divisão temporal estrita,
-evitando o vazamento de informação comum em avaliações por amostragem
-aleatória.
+com aumento de dados por espelhamento, (iii) enriquecer essa representação com
+atributos de desempenho intra-octógono e de forma recente, e (iv) usar divisão
+temporal estrita, evitando o vazamento de informação comum em avaliações por
+amostragem aleatória.
 
 \section{Metodologia}
 
@@ -143,13 +177,21 @@ luta foi normalizado em quatro categorias (\emph{orthodox}, \emph{southpaw},
 
 \subsection{Engenharia de atributos e espelhamento}
 Cada luta foi representada pela \textbf{diferença} entre os atributos do lutador
-e do oponente ($\text{lutador} - \text{oponente}$). Para o estilo de luta,
-usamos a diferença de indicadores por categoria (por exemplo,
+e do oponente ($\text{lutador} - \text{oponente}$), organizados nos quatro
+grupos da Tabela~\ref{tab:atributos}. Além dos diferenciais físicos e de cartel,
+incorporamos: (i) proxies de \emph{durabilidade} --- número de derrotas por
+nocaute e a fração de lutas que terminam em decisão; (ii) \emph{forma recente}
+--- taxas de vitória nas janelas de 2 e 5 anos anteriores à luta; e
+(iii) \emph{estatísticas de desempenho} dentro do octógono --- golpes
+significativos dados e absorvidos por luta, takedowns, precisão de takedown e
+precisão de golpes, todas calculadas como médias estritamente pré-luta para
+evitar vazamento. Para o estilo de luta, usamos a diferença de indicadores por
+categoria (por exemplo,
 $d\_stance\_southpaw = \mathbb{1}[\text{lutador southpaw}] -
 \mathbb{1}[\text{oponente southpaw}]$) e um indicador simétrico de
 \emph{estilos diferentes}. As taxas de vitória por método foram calculadas como
 a razão entre vitórias por aquele método e o total de vitórias. Ao todo, o
-modelo utiliza \textbf{14 atributos}.
+modelo utiliza \textbf{23 atributos}.
 
 Como cada luta aparece uma única vez no conjunto (de um canto arbitrário), e a
 representação diferencial é \emph{antissimétrica}, aplicamos
@@ -162,9 +204,9 @@ apresentação e (iii) garante o balanceamento exato das classes.
 \subsection{Avaliação por divisão temporal}
 Para simular o uso real do sistema (prever eventos futuros) e evitar vazamento
 temporal, ordenamos as lutas por data e reservamos os \textbf{20\% mais
-recentes} para teste. O conjunto de treino contém 6.261 lutas (1993--2021), que
-após o espelhamento totalizam \textbf{12.522 exemplos} balanceados; o conjunto
-de teste contém \textbf{1.566 lutas} (2021--2024), sem espelhamento.
+recentes} para teste. O conjunto de treino contém 5.603 lutas (2008--2022), que
+após o espelhamento totalizam \textbf{11.206 exemplos} balanceados; o conjunto
+de teste contém \textbf{1.401 lutas} (2022--2024), sem espelhamento.
 
 \subsection{Modelos}
 Comparamos cinco modelos de aprendizagem supervisionada, cobrindo modelos
@@ -199,16 +241,19 @@ avaliação), executáveis de forma independente.
 
 \subsection{Análise exploratória}
 A Figura~\ref{fig:volume} mostra o crescimento do número de lutas por ano,
-refletindo a expansão do UFC. A Figura~\ref{fig:winrate} relaciona algumas
-features diferenciais à taxa de vitória observada no treino: lutadores mais
-jovens, com mais vitórias, maior envergadura e maior taxa de nocaute tendem a
-vencer mais, embora os efeitos sejam moderados --- um primeiro indício do baixo
-teto de previsibilidade do esporte.
+refletindo a expansão do UFC --- evidenciando também a baixa cobertura de
+estatísticas detalhadas no período inicial, que motivou o recorte a partir de
+2008. A Figura~\ref{fig:winrate} relaciona algumas features diferenciais à taxa
+de vitória observada no treino: lutadores mais jovens, com mais vitórias, maior
+envergadura e maior taxa de nocaute tendem a vencer mais, embora os efeitos
+sejam moderados --- um primeiro indício do baixo teto de previsibilidade do
+esporte.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.7\linewidth]{eda_lutas_por_ano.pdf}
-\caption{Número de lutas do UFC por ano no conjunto de dados (1993--2024).}
+\caption{Número de lutas do UFC por ano no conjunto de dados (1993--2024);
+a modelagem utiliza apenas as lutas a partir de 2008.}
 \label{fig:volume}
 \end{figure}
 
@@ -222,7 +267,7 @@ quantis). A linha tracejada indica 50\%.}
 
 \subsection{Seleção de modelos (validação cruzada)}
 A Tabela~\ref{tab:cv} resume a AUC-ROC obtida na validação cruzada do treino.
-Os modelos ficaram próximos entre si (AUC entre 0,612 e 0,626), com leve
+Os modelos ficaram próximos entre si (AUC entre 0,617 e 0,634), com leve
 vantagem da Regressão Logística, o que sugere que a relação entre os atributos e
 o resultado é predominantemente \emph{aditiva/linear} após a representação
 diferencial.
@@ -235,11 +280,11 @@ diferencial.
 \toprule
 Modelo & AUC-ROC (CV) \\
 \midrule
-Regressão Logística & 0,626 \\
-Random Forest & 0,622 \\
-XGBoost & 0,622 \\
-Rede Neural (MLP) & 0,614 \\
-SVM (RBF) & 0,612 \\
+Regressão Logística & 0,634 \\
+XGBoost & 0,628 \\
+Random Forest & 0,623 \\
+SVM (RBF) & 0,618 \\
+Rede Neural (MLP) & 0,617 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -248,10 +293,12 @@ SVM (RBF) & 0,612 \\
 A Tabela~\ref{tab:metricas} apresenta o desempenho no conjunto de teste
 temporal. Todos os modelos de aprendizagem superaram claramente os baselines.
 O \textbf{Random Forest} obteve o melhor desempenho geral
-(acurácia 0,602; AUC-ROC 0,637), seguido de perto pelos demais. As curvas ROC
+(acurácia 0,625; AUC-ROC 0,675), seguido de perto pelos demais. As curvas ROC
 (Figura~\ref{fig:roc}) e as matrizes de confusão (Figura~\ref{fig:confusao})
 confirmam um comportamento equilibrado entre as classes, sem viés para vitória
-ou derrota --- efeito direto do espelhamento.
+ou derrota --- efeito direto do espelhamento. O ganho em relação a uma versão
+anterior do sistema, baseada apenas em atributos físicos e de cartel, evidencia
+o valor das novas estatísticas de luta e de forma recente.
 
 \input{metricas_teste.tex}
 
@@ -269,21 +316,24 @@ ou derrota --- efeito direto do espelhamento.
 \label{fig:confusao}
 \end{figure}
 
-Um resultado notável é que o baseline ``melhor cartel'' fica praticamente no
-nível do acaso (acurácia 0,492; AUC 0,486) nas lutas recentes: escolher o
-lutador com mais vitórias, isoladamente, não é informativo. Os modelos completos
-alcançam $\sim$60\% porque combinam vários sinais fracos.
+Um resultado notável é que o baseline ``melhor cartel'' fica abaixo do nível do
+acaso (acurácia 0,489; AUC 0,481) nas lutas recentes: escolher o lutador com
+mais vitórias, isoladamente, não é informativo. Os modelos completos alcançam
+$\sim$62\% porque combinam vários sinais fracos.
 
 \subsection{Importância dos atributos e calibração}
 A Figura~\ref{fig:importancia} mostra os coeficientes da Regressão Logística e a
-importância por permutação. A \textbf{diferença de idade} é o atributo mais
-determinante (lutadores mais velhos vencem menos), seguida da \textbf{diferença
-de derrotas}. As taxas de nocaute e finalização e a envergadura também
-contribuem positivamente, enquanto o estilo de luta tem efeito marginal. Isso
-explica a fraqueza do baseline de cartel: o número absoluto de vitórias importa
-menos do que a idade e o histórico de derrotas. A curva de calibração
-(Figura~\ref{fig:calibracao}) indica que as probabilidades previstas são
-razoavelmente confiáveis, ainda que conservadoras nos extremos.
+importância por permutação. A \textbf{diferença de idade} permanece o atributo
+mais determinante (lutadores mais velhos vencem menos). Em seguida, destacam-se
+atributos do novo conjunto: os \textbf{golpes significativos absorvidos}
+(menor defesa, menor chance de vitória), a \textbf{precisão de golpes} e a
+\textbf{forma recente} (win-rate de 5 anos), além da já conhecida
+\emph{diferença de derrotas}. Esse resultado valida diretamente a inclusão das
+estatísticas de desempenho intra-octógono: medidas de o quanto o atleta acerta
+e o quanto apanha são mais informativas do que o cartel absoluto. As taxas de
+finalização, o número de lutas totais e o estilo de luta têm efeito marginal. A
+curva de calibração (Figura~\ref{fig:calibracao}) indica que as probabilidades
+previstas são razoavelmente confiáveis, ainda que conservadoras nos extremos.
 
 \begin{figure}[t]
 \centering
@@ -302,40 +352,42 @@ razoavelmente confiáveis, ainda que conservadoras nos extremos.
 
 \subsection{Discussão}
 Os resultados são consistentes com o teto de previsibilidade do MMA reportado na
-literatura ($\sim$60--65\%). A proximidade entre modelos lineares e não lineares
-sugere que ganhos adicionais virão mais de \emph{melhores atributos} (por
-exemplo, estatísticas de desempenho dentro do octógono, sequência de
-vitórias/derrotas recentes, tempo de inatividade e mudança de categoria de peso)
-do que de modelos mais complexos. A divisão temporal e o espelhamento tornam a
-avaliação mais honesta, mas também mais difícil, pois o modelo é testado em
-lutadores e tendências possivelmente não vistos no treino.
+literatura ($\sim$60--65\%), agora no limite superior dessa faixa graças ao
+conjunto de atributos ampliado. A proximidade entre modelos lineares e não
+lineares sugere que ganhos adicionais virão mais de \emph{melhores atributos}
+--- como demonstrado pela incorporação das estatísticas de luta e da forma
+recente --- do que de modelos mais complexos. A divisão temporal e o
+espelhamento tornam a avaliação mais honesta, mas também mais difícil, pois o
+modelo é testado em lutadores e tendências possivelmente não vistos no treino.
 
 \section{Conclusão}
 Formulamos a previsão de lutas do UFC como classificação binária e comparamos
-cinco modelos de aprendizagem de máquina sobre 7.827 lutas reais, com uma
-metodologia cuidadosa de preparação de dados, representação diferencial
-antissimétrica com espelhamento e avaliação por divisão temporal. O melhor
-modelo (Random Forest) atingiu 60,2\% de acurácia e AUC-ROC de 0,637,
-superando os baselines e ficando dentro do teto realista do esporte. A análise
-de importância destacou idade e histórico de derrotas como fatores
-preponderantes.
+cinco modelos de aprendizagem de máquina sobre 7.004 lutas reais, com uma
+metodologia cuidadosa de preparação de dados, uma representação diferencial
+antissimétrica de 23 atributos --- enriquecida com estatísticas de desempenho
+intra-octógono e indicadores de forma recente --- e avaliação por divisão
+temporal. O melhor modelo (Random Forest) atingiu 62,5\% de acurácia e AUC-ROC
+de 0,675, superando os baselines e situando-se no teto realista do esporte. A
+análise de importância destacou a idade, mas também os golpes absorvidos, a
+precisão de golpes e a forma recente como fatores preponderantes.
 
-Como trabalhos futuros, propomos: (i) incorporar estatísticas detalhadas de
-desempenho por luta (golpes significativos, quedas, controle de solo);
-(ii) modelar a forma recente do atleta (janelas temporais e sequências de
-resultados); (iii) incorporar as odds das casas de apostas como atributo e como
-baseline forte; e (iv) explorar modelos específicos para dados longitudinais,
-como redes recorrentes ou \emph{gradient boosting} com features temporais.
+Como trabalhos futuros, propomos: (i) incorporar as odds das casas de apostas
+como atributo e como baseline forte; (ii) modelar explicitamente sequências de
+resultados e tempo de inatividade (\emph{layoff}) entre lutas; (iii) tratar
+mudanças de categoria de peso e cortes de peso; e (iv) explorar modelos
+específicos para dados longitudinais, como redes recorrentes ou \emph{gradient
+boosting} com features temporais.
 
 \section*{Contribuições dos Integrantes}
 \begin{itemize}
   \item \textbf{Enzo Lozano}: coleta e preparação dos dados (limpeza,
         junção das tabelas, tratamento de valores ausentes) e análise
         exploratória.
-  \item \textbf{Alan Carneiro}: engenharia de atributos, espelhamento, divisão
-        temporal e implementação/ajuste dos modelos.
-  \item \textbf{Marcelo Marques}: avaliação, geração de figuras e tabelas,
-        análise de resultados e redação do artigo.
+  \item \textbf{Alan Carneiro}: representação diferencial base, espelhamento,
+        divisão temporal e implementação/ajuste dos modelos.
+  \item \textbf{Marcelo Marques}: novos atributos (estatísticas de desempenho
+        intra-octógono, forma recente e proxies de durabilidade), avaliação,
+        geração de figuras e tabelas, análise de resultados e redação do artigo.
 \end{itemize}
 
 \bibliographystyle{plain}
