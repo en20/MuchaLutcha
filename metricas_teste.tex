@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\caption{Desempenho dos modelos no conjunto de teste temporal (lutas de 2022--2024). Em negrito, o melhor valor de cada métrica.}
+\label{tab:metricas}
+\begin{tabular}{lcccccc}
+\toprule
+Modelo & Acurácia & Precisão & Revocação & F1 & AUC-ROC & Log-loss \\
+\midrule
+Baseline (classe majoritária) & 0,492 & 0,000 & 0,000 & 0,000 & -- & -- \\
+Baseline (melhor cartel) & 0,489 & 0,497 & 0,414 & 0,452 & 0,481 & 0,860 \\
+Regressão Logística & 0,612 & 0,624 & 0,597 & 0,610 & 0,665 & \textbf{0,653} \\
+Random Forest & \textbf{0,625} & \textbf{0,636} & 0,612 & 0,624 & \textbf{0,675} & 0,659 \\
+XGBoost & 0,622 & 0,629 & \textbf{0,622} & \textbf{0,626} & 0,663 & 0,654 \\
+SVM (RBF) & 0,606 & 0,615 & 0,600 & 0,607 & 0,644 & 0,663 \\
+Rede Neural (MLP) & 0,619 & 0,633 & 0,596 & 0,614 & 0,661 & 0,659 \\
+\bottomrule
+\end{tabular}
+\end{table}
