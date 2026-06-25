@@ -124,6 +124,8 @@ def scrape_rankings():
         div_key = DIVISION_MAP.get(division_pt)
         if not div_key:
             continue  # skip P4P
+        if div_key in result:
+            continue  # page has duplicate groups; first one has the full list
 
         fighters = []
 
