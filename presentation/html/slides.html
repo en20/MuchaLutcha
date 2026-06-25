@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>MuchaLutcha MatchMaker — Slides</title>
+<style>
+/* ── FONTES ────────────────────────────────────────── */
+@font-face {
+  font-family: 'BarlowCond';
+  font-weight: 700;
+  src: url('fonts/BarlowCondensed-Bold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'BarlowCond';
+  font-weight: 800;
+  src: url('fonts/BarlowCondensed-ExtraBold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'BarlowCond';
+  font-weight: 900;
+  src: url('fonts/BarlowCondensed-Black.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'BarlowCond';
+  font-style: italic;
+  font-weight: 900;
+  src: url('fonts/BarlowCondensed-BlackItalic.ttf') format('truetype');
+}
+
+/* ── PAGE SIZE: 16:9 ───────────────────────────────── */
+@page {
+  size: 1280px 720px;
+  margin: 0;
+}
+
+/* ── PALETA ────────────────────────────────────────── */
+:root {
+  --red:   #D20000;
+  --gold:  #C8A000;
+  --black: #0A0A0A;
+  --dgray: #1A1A1A;
+  --mgray: #2A2A2A;
+  --lgray: #AAAAAA;
+  --white: #F2F2F2;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #000;
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+/* ── SLIDE ─────────────────────────────────────────── */
+.slide {
+  width: 1280px;
+  height: 720px;
+  background: var(--black);
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+  display: block;
+}
+
+/* ── HEADER PADRÃO ─────────────────────────────────── */
+.hdr {
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 86px;
+  background: var(--dgray);
+}
+.hdr::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 4px;
+  background: var(--red);
+}
+.hdr h1 {
+  font-family: 'BarlowCond', Arial, sans-serif;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 42px;
+  color: var(--white);
+  letter-spacing: 2px;
+  line-height: 1;
+  padding: 12px 32px 0;
+  text-transform: uppercase;
+}
+.hdr .sub {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--gold);
+  padding: 4px 32px 0;
+  letter-spacing: 1px;
+  font-family: Arial, sans-serif;
+}
+
+/* área de conteúdo abaixo do header */
+.body {
+  position: absolute;
+  top: 92px; left: 24px; right: 24px; bottom: 26px;
+}
+
+.pg { position:absolute; bottom:6px; right:14px; font-size:11px; color:#444; font-family:Arial,sans-serif; }
+
+/* ── HELPERS ───────────────────────────────────────── */
+.ufc-font {
+  font-family: 'BarlowCond', Arial, sans-serif;
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* stat box */
+.stat-box {
+  background: var(--dgray);
+  border: 1px solid var(--red);
+  text-align: center;
+  padding: 14px 10px 10px;
+}
+.stat-box .n { font-family:'BarlowCond',Arial,sans-serif; font-weight:900; font-size:52px; color:var(--red); line-height:1; }
+.stat-box .d { font-size:12px; color:var(--lgray); margin-top:4px; line-height:1.3; }
+
+/* group card */
+.gc-title { background:var(--red); padding:5px 10px; font-size:12px; font-weight:700; color:var(--white); text-transform:uppercase; letter-spacing:1px; }
+.gc-body  { background:var(--dgray); padding:6px 10px; }
+.gc-body li { font-size:12px; color:var(--lgray); list-style:none; padding:2px 0; border-bottom:1px solid #333; }
+.gc-body li:last-child { border-bottom:none; }
+
+/* step box */
+.step { background:var(--dgray); border:1px solid var(--red); flex:1; overflow:hidden; }
+.step .sh { background:var(--red); text-align:center; font-size:11px; font-weight:700; color:var(--white); padding:5px 4px; letter-spacing:1px; }
+.step .st { font-size:13px; font-weight:700; color:var(--gold); text-align:center; padding:8px 6px 4px; line-height:1.3; }
+.step .sd { font-size:11px; color:var(--lgray); text-align:center; padding:0 6px 8px; line-height:1.4; }
+
+/* model box */
+.mbox { background:var(--dgray); border:1px solid var(--red); flex:1; text-align:center; overflow:hidden; }
+.mbox .mh { background:var(--red); font-family:'BarlowCond',Arial,sans-serif; font-weight:900; font-style:italic; font-size:24px; letter-spacing:2px; color:var(--white); padding:6px 4px; }
+.mbox .mn { font-size:13px; font-weight:700; color:var(--gold); padding:8px 4px 4px; line-height:1.3; }
+.mbox .md { font-size:11px; color:var(--lgray); padding:0 6px 8px; }
+
+/* bullets */
+.bul { list-style:none; }
+.bul li { padding:6px 0; border-bottom:1px solid #222; font-size:13px; color:var(--white); display:flex; gap:10px; line-height:1.4; }
+.bul li:last-child { border-bottom:none; }
+.bul li .dot { width:7px; height:7px; background:var(--red); border-radius:50%; margin-top:5px; flex-shrink:0; }
+
+/* results table */
+table.res { width:100%; border-collapse:collapse; font-size:12px; }
+table.res th { background:var(--red); color:var(--white); padding:7px 6px; font-size:11px; font-weight:700; text-align:center; letter-spacing:.5px; }
+table.res th:first-child { text-align:left; padding-left:10px; }
+table.res td { padding:6px 6px; text-align:center; border-bottom:1px solid #222; color:var(--white); }
+table.res td:first-child { text-align:left; padding-left:10px; }
+table.res tr.bl td { color:var(--lgray); font-size:11px; }
+table.res tr.best { background:#1e1e1e; outline:1px solid var(--gold); }
+table.res tr.best td { color:var(--gold); font-weight:700; }
+table.res tr:nth-child(even):not(.best):not(.bl) { background:#131313; }
+.star { color:var(--gold); font-weight:700; }
+
+/* bar chart */
+.bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.bar-lbl { width:200px; font-size:13px; color:var(--white); flex-shrink:0; }
+.bar-track { flex:1; height:26px; background:#1a1a1a; }
+.bar-fill  { height:100%; display:flex; align-items:center; padding-left:8px; }
+.bar-val   { font-size:13px; font-weight:700; color:var(--white); margin-left:8px; }
+
+/* agenda */
+.ag-item { display:flex; align-items:center; gap:14px; margin-bottom:8px; }
+.ag-num  { width:40px; height:40px; background:var(--red); display:flex; align-items:center; justify-content:center; font-family:'BarlowCond',Arial,sans-serif; font-weight:900; font-style:italic; font-size:22px; color:var(--white); flex-shrink:0; }
+.ag-lbl  { font-size:16px; color:var(--white); }
+
+/* member */
+.mc { flex:1; background:var(--dgray); overflow:hidden; }
+.mc .mch { background:var(--red); padding:10px; text-align:center; font-family:'BarlowCond',Arial,sans-serif; font-weight:900; font-style:italic; font-size:26px; letter-spacing:2px; color:var(--white); line-height:1.1; }
+.mc .mcb { padding:10px 12px; }
+.mc .mcb li { list-style:none; font-size:12px; color:var(--lgray); padding:4px 0; border-bottom:1px solid #333; }
+.mc .mcb li::before { content:"• "; color:var(--red); }
+.mc .mcb li:last-child { border-bottom:none; }
+
+/* formula */
+.fbox { background:var(--dgray); border:1px solid var(--gold); padding:13px 20px; text-align:center; font-size:17px; color:var(--gold); font-weight:600; }
+
+/* insight */
+.ins { display:flex; gap:10px; align-items:flex-start; padding:5px 0; border-bottom:1px solid #222; }
+.ins:last-child { border-bottom:none; }
+.ins .ico { font-size:18px; flex-shrink:0; }
+.ins .txt { font-size:13px; color:var(--white); line-height:1.4; }
+
+/* highlight */
+.hb { background:var(--red); color:var(--white); font-size:14px; font-weight:700; padding:10px 16px; text-align:center; }
+
+/* border card */
+.bcard { background:var(--dgray); border-left:3px solid var(--red); padding:10px 14px; }
+.bcard.gold { border-left-color:var(--gold); }
+.bcard .btitle { font-size:12px; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+.bcard .btext  { font-size:12px; color:var(--lgray); line-height:1.4; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+  S1 — CAPA  (estilo logo UFC)
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s1">
+  <!-- faixa diagonal de fundo -->
+  <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a0000 0%,#0a0a0a 55%,#0a0a0a 100%);"></div>
+
+  <!-- faixa vermelha diagonal direita -->
+  <div style="position:absolute;top:0;right:0;width:340px;height:100%;background:var(--red);clip-path:polygon(18% 0,100% 0,100% 100%,0 100%);opacity:0.12;"></div>
+
+  <!-- barra vermelha topo -->
+  <div style="position:absolute;top:0;left:0;right:0;height:8px;background:var(--red);"></div>
+  <!-- linha dourada abaixo do topo -->
+  <div style="position:absolute;top:8px;left:0;right:0;height:2px;background:var(--gold);"></div>
+  <!-- barra vermelha bottom -->
+  <div style="position:absolute;bottom:0;left:0;right:0;height:8px;background:var(--red);"></div>
+
+  <!-- LOGO CENTRAL estilo UFC -->
+  <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;">
+
+    <!-- "MUCHA LUTCHA" em estilo UFC: preto com borda branca, itálico, skew -->
+    <div style="position:relative;margin-bottom:6px;">
+      <!-- sombra vermelha atrás -->
+      <div class="ufc-font" style="position:absolute;top:6px;left:6px;font-size:120px;color:var(--red);line-height:0.85;white-space:nowrap;filter:blur(2px);opacity:0.6;">MUCHA<br>LUTCHA</div>
+      <!-- texto principal: branco com stroke -->
+      <div class="ufc-font" style="font-size:120px;color:var(--white);line-height:0.85;white-space:nowrap;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000;position:relative;">MUCHA<br>LUTCHA</div>
+    </div>
+
+    <!-- MATCHMAKER em vermelho, menor, sem itálico -->
+    <div class="ufc-font" style="font-style:normal;font-size:36px;color:var(--red);letter-spacing:16px;margin-top:4px;margin-bottom:18px;">MATCHMAKER</div>
+
+    <!-- linha dourada divisória -->
+    <div style="width:480px;height:2px;background:var(--gold);margin-bottom:18px;"></div>
+
+    <div style="font-family:Arial,sans-serif;font-size:16px;color:var(--lgray);text-align:center;line-height:1.6;max-width:720px;">
+      Previsão de Resultados de Lutas do UFC com Aprendizagem de Máquina<br>
+      <span style="color:var(--white);font-weight:600;">um Estudo Comparativo de Modelos</span>
+    </div>
+    <div style="margin-top:18px;font-family:Arial,sans-serif;font-size:15px;color:var(--gold);font-weight:700;letter-spacing:1px;">
+      Enzo Lozano &nbsp;•&nbsp; Alan Carneiro &nbsp;•&nbsp; Marcelo Marques
+    </div>
+    <div style="margin-top:7px;font-family:Arial,sans-serif;font-size:11px;color:#555;letter-spacing:1px;">
+      Aprendizagem de Máquina 2026.1 &nbsp;•&nbsp; Prof. César Lincoln C. Mattos &nbsp;•&nbsp; UFC — Dep. Computação
+    </div>
+  </div>
+
+  <div class="pg">1/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S2 — AGENDA
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s2">
+  <div class="hdr"><h1>AGENDA</h1></div>
+  <div class="body" style="display:grid;grid-template-columns:1fr 1fr;gap:10px 48px;padding-top:8px;">
+    <div>
+      <div class="ag-item"><div class="ag-num">01</div><div class="ag-lbl">Motivação &amp; Objetivo</div></div>
+      <div class="ag-item"><div class="ag-num">02</div><div class="ag-lbl">Dados &amp; Descrição do Problema</div></div>
+      <div class="ag-item"><div class="ag-num">03</div><div class="ag-lbl">Fundamentação Teórica</div></div>
+      <div class="ag-item"><div class="ag-num">04</div><div class="ag-lbl">Metodologia</div></div>
+    </div>
+    <div>
+      <div class="ag-item"><div class="ag-num">05</div><div class="ag-lbl">Atributos — 23 features</div></div>
+      <div class="ag-item"><div class="ag-num">06</div><div class="ag-lbl">Experimentos &amp; Resultados</div></div>
+      <div class="ag-item"><div class="ag-num">07</div><div class="ag-lbl">Aplicação Web</div></div>
+      <div class="ag-item"><div class="ag-num">08</div><div class="ag-lbl">Conclusão &amp; Trabalhos Futuros</div></div>
+    </div>
+  </div>
+  <div class="pg">2/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S3 — MOTIVAÇÃO
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s3">
+  <div class="hdr"><h1>MOTIVAÇÃO &amp; OBJETIVO</h1><div class="sub">Por que prever lutas do UFC?</div></div>
+  <div class="body" style="padding-top:6px;">
+    <ul class="bul" style="margin-bottom:16px;">
+      <li><div class="dot"></div><div>O UFC movimenta uma <strong>indústria bilionária</strong> de eventos e apostas esportivas</div></li>
+      <li><div class="dot"></div><div>Uma luta pode ser decidida em segundos — alto grau de <strong>imprevisibilidade</strong></div></li>
+      <li><div class="dot"></div><div>Existe demanda real por modelos <strong>preditivos robustos e interpretáveis</strong></div></li>
+      <li><div class="dot"></div><div>Motivação <strong>prática</strong>: apoio a análises esportivas e apostas</div></li>
+      <li><div class="dot"></div><div>Motivação <strong>científica</strong>: quantificar o limite de previsibilidade do MMA</div></li>
+    </ul>
+    <div class="fbox" style="margin-bottom:14px;font-size:16px;">
+      Objetivo: <strong>classificação binária</strong> — dadas características pré-luta de dois lutadores, qual deles vence?
+    </div>
+    <div style="display:flex;gap:14px;">
+      <div class="bcard" style="flex:1;"><div class="btitle">Fonte de dados</div><div class="btext">ufcstats.com via projeto <em>Punch Prophecy</em></div></div>
+      <div class="bcard" style="flex:1;"><div class="btitle">Referência de mercado</div><div class="btext">Favorito das casas vence ~60–65% → teto realista de previsibilidade</div></div>
+    </div>
+  </div>
+  <div class="pg">3/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S4 — DADOS
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s4">
+  <div class="hdr"><h1>DADOS</h1><div class="sub">Dataset: ufcstats.com · Punch Prophecy</div></div>
+  <div class="body" style="padding-top:8px;">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;">
+      <div class="stat-box"><div class="n">7.004</div><div class="d">lutas válidas<br>2008–2024</div></div>
+      <div class="stat-box"><div class="n">2.538</div><div class="d">lutadores<br>únicos</div></div>
+      <div class="stat-box"><div class="n">23</div><div class="d">atributos<br>por luta</div></div>
+      <div class="stat-box"><div class="n">80/20</div><div class="d">treino/teste<br>divisão temporal</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Filtros aplicados</div>
+    <ul class="bul">
+      <li><div class="dot"></div><div>Descartados empates e resultados anulados</div></li>
+      <li><div class="dot"></div><div>Restringido a partir de <strong style="color:var(--gold);">2008</strong> — ano a partir do qual as estatísticas detalhadas têm boa cobertura</div></li>
+      <li><div class="dot"></div><div>Valores contínuos ausentes imputados pela <strong>mediana</strong>; estilo de luta normalizado em 4 categorias</div></li>
+      <li><div class="dot"></div><div>Altura, envergadura e estilo obtidos do <code>fighter_stats.csv</code> (99,3% de cobertura por nome)</div></li>
+    </ul>
+  </div>
+  <div class="pg">4/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S5 — FUNDAMENTAÇÃO
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s5">
+  <div class="hdr"><h1>FUNDAMENTAÇÃO TEÓRICA</h1><div class="sub">Formulação matemática do problema</div></div>
+  <div class="body" style="padding-top:8px;">
+    <div style="font-size:14px;color:var(--white);margin-bottom:12px;line-height:1.6;">
+      Seja uma luta entre lutador <strong style="color:var(--gold);">A</strong> e oponente <strong style="color:var(--gold);">B</strong>.
+      Definimos <strong style="color:var(--gold);">y ∈ {0,1}</strong>: y=1 se A vence, y=0 caso contrário.
+    </div>
+    <div class="fbox" style="margin-bottom:16px;font-size:20px;">
+      Aprender &nbsp; <strong>f(x) ≈ P(y=1 | x)</strong> &nbsp; onde &nbsp; <strong>x = attrs(A) − attrs(B)</strong>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div>
+        <div style="font-size:12px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Por que representação diferencial?</div>
+        <ul class="bul" style="font-size:13px;">
+          <li><div class="dot"></div><div>O que importa é a <strong>vantagem relativa</strong>, não valores absolutos</div></li>
+          <li><div class="dot"></div><div>Imposição de simetria: <strong>f(x) = 1 − f(−x)</strong></div></li>
+          <li><div class="dot"></div><div>Elimina viés de qual lutador é apresentado primeiro</div></li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Trabalhos similares</div>
+        <ul class="bul" style="font-size:13px;">
+          <li><div class="dot"></div><div><em>Punch Prophecy</em>: regressão logística + odds de apostas</div></li>
+          <li><div class="dot"></div><div>Literatura: favorito vence ~60–65% → teto realista</div></li>
+          <li><div class="dot"></div><div>Nosso diferencial: 5 modelos, stats intra-octógono, divisão temporal estrita</div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="pg">5/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S6 — ATRIBUTOS
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s6">
+  <div class="hdr"><h1>ATRIBUTOS — 23 FEATURES</h1><div class="sub">Representação diferencial e antissimétrica</div></div>
+  <div class="body" style="padding-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div>
+      <div class="gc-title">Grupo 1 — Diferenciais Básicos</div>
+      <div class="gc-body"><ul>
+        <li>Idade, Altura, Envergadura</li>
+        <li>Vitórias / Derrotas / Lutas totais</li>
+        <li>Taxa de KO, Finalização, Decisão</li>
+        <li>Derrotas por KO (durabilidade)</li>
+        <li>Taxa de ida à decisão (proxy durabilidade)</li>
+      </ul></div>
+      <div class="gc-title" style="margin-top:10px;">Grupo 2 — Forma Recente</div>
+      <div class="gc-body"><ul>
+        <li>Win-rate últimos <strong style="color:var(--white);">5 anos</strong></li>
+        <li>Win-rate últimos <strong style="color:var(--white);">2 anos</strong> (mais sensível a mudanças)</li>
+      </ul></div>
+      <div class="gc-title" style="margin-top:10px;">Grupo 4 — Estilo de Luta</div>
+      <div class="gc-body"><ul>
+        <li>Stance: orthodox, southpaw, switch, outro</li>
+        <li>Indicador binário: estilos diferentes</li>
+      </ul></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="gc-title">Grupo 3 — Estatísticas Intra-Octógono</div>
+      <div class="gc-body" style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+        <div style="font-size:12px;color:var(--lgray);padding:6px 8px;border-right:1px solid #333;border-bottom:1px solid #333;">Golpes signif. <strong style="color:var(--white);">dados</strong></div>
+        <div style="font-size:12px;color:var(--lgray);padding:6px 8px;border-bottom:1px solid #333;">Golpes signif. <strong style="color:var(--white);">absorvidos</strong></div>
+        <div style="font-size:12px;color:var(--lgray);padding:6px 8px;border-right:1px solid #333;border-bottom:1px solid #333;">Takedowns <strong style="color:var(--white);">concluídos</strong></div>
+        <div style="font-size:12px;color:var(--lgray);padding:6px 8px;border-bottom:1px solid #333;">Precisão de <strong style="color:var(--white);">takedown</strong></div>
+        <div style="font-size:12px;color:var(--lgray);padding:6px 8px;grid-column:1/-1;">Precisão de <strong style="color:var(--white);">golpes</strong></div>
+      </div>
+      <div style="background:var(--dgray);border-left:3px solid var(--gold);padding:10px 14px;margin-top:auto;">
+        <div style="font-size:11px;color:var(--gold);font-style:italic;line-height:1.5;">
+          Todas calculadas como médias estritamente pré-luta<br>
+          → sem vazamento de informação temporal
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="pg">6/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S7 — METODOLOGIA
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s7">
+  <div class="hdr"><h1>METODOLOGIA</h1><div class="sub">Pipeline de 5 passos</div></div>
+  <div class="body" style="padding-top:8px;">
+    <div style="display:flex;gap:6px;margin-bottom:16px;align-items:stretch;">
+      <div class="step"><div class="sh">PASSO 1</div><div class="st">Preparação dos Dados</div><div class="sd">Limpeza, junção de tabelas, imputação por mediana</div></div>
+      <div style="display:flex;align-items:center;color:var(--red);font-size:18px;flex-shrink:0;">▶</div>
+      <div class="step"><div class="sh">PASSO 2</div><div class="st">Engenharia de Atributos</div><div class="sd">Diferencial A−B + espelhamento</div></div>
+      <div style="display:flex;align-items:center;color:var(--red);font-size:18px;flex-shrink:0;">▶</div>
+      <div class="step"><div class="sh">PASSO 3</div><div class="st">Divisão Temporal</div><div class="sd">80% treino (2008–2022) 20% teste (2022–2024)</div></div>
+      <div style="display:flex;align-items:center;color:var(--red);font-size:18px;flex-shrink:0;">▶</div>
+      <div class="step"><div class="sh">PASSO 4</div><div class="st">Seleção de Hiperparâmetros</div><div class="sd">GridSearch 5-fold CV somente no treino</div></div>
+      <div style="display:flex;align-items:center;color:var(--red);font-size:18px;flex-shrink:0;">▶</div>
+      <div class="step"><div class="sh">PASSO 5</div><div class="st">Avaliação</div><div class="sd">Acurácia, AUC-ROC, F1, Log-loss, Calibração</div></div>
+    </div>
+    <div style="background:var(--dgray);border-left:4px solid var(--red);padding:12px 16px;margin-bottom:10px;">
+      <div style="font-size:12px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Espelhamento — por que é fundamental</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+        <div style="font-size:12px;color:var(--lgray);">① Impõe simetria: <strong style="color:var(--white);">f(x) = 1−f(−x)</strong></div>
+        <div style="font-size:12px;color:var(--lgray);">② Elimina viés de <strong style="color:var(--white);">ordem de apresentação</strong></div>
+        <div style="font-size:12px;color:var(--lgray);">③ Garante <strong style="color:var(--white);">balanceamento exato</strong> das classes</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="background:#111;border:1px solid #333;padding:8px 12px;font-size:12px;color:var(--lgray);">
+        <span style="color:var(--gold);font-weight:700;">Treino:</span> 5.603 lutas → <strong style="color:var(--white);">11.206 exemplos</strong> após espelhamento
+      </div>
+      <div style="background:#111;border:1px solid #333;padding:8px 12px;font-size:12px;color:var(--lgray);">
+        <span style="color:var(--gold);font-weight:700;">Teste:</span> <strong style="color:var(--white);">1.401 lutas</strong> (2022–2024) sem espelhamento
+      </div>
+    </div>
+  </div>
+  <div class="pg">7/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S8 — MODELOS
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s8">
+  <div class="hdr"><h1>MODELOS COMPARADOS</h1><div class="sub">5 famílias de aprendizagem supervisionada + 2 baselines</div></div>
+  <div class="body" style="padding-top:8px;">
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <div class="mbox"><div class="mh">LR</div><div class="mn">Regressão<br>Logística</div><div class="md">Linear · interpretável</div></div>
+      <div class="mbox"><div class="mh">RF</div><div class="mn">Random<br>Forest</div><div class="md">Ensemble de árvores</div></div>
+      <div class="mbox"><div class="mh">XGB</div><div class="mn">XGBoost</div><div class="md">Gradient Boosting</div></div>
+      <div class="mbox"><div class="mh">SVM</div><div class="mn">SVM<br>kernel RBF</div><div class="md">Baseado em margem</div></div>
+      <div class="mbox"><div class="mh">MLP</div><div class="mn">Rede Neural<br>MLP</div><div class="md">Conexionista</div></div>
+    </div>
+    <div style="background:var(--dgray);border-left:4px solid var(--gold);padding:12px 16px;margin-bottom:10px;">
+      <div style="font-size:12px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Baselines</div>
+      <div style="display:flex;gap:24px;">
+        <div style="font-size:13px;color:var(--lgray);">① Prever sempre a classe majoritária</div>
+        <div style="font-size:13px;color:var(--lgray);">② Prever o lutador com melhor cartel (mais vitórias)</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="background:#111;border:1px solid #333;padding:8px 12px;font-size:12px;color:var(--lgray);">
+        <span style="color:var(--gold);font-weight:700;">Pipeline:</span> StandardScaler + modelo (quando aplicável) — sem vazamento de informação
+      </div>
+      <div style="background:#111;border:1px solid #333;padding:8px 12px;font-size:12px;color:var(--lgray);">
+        <span style="color:var(--gold);font-weight:700;">Critério:</span> GridSearchCV · 5-fold estratificado · AUC-ROC
+      </div>
+    </div>
+  </div>
+  <div class="pg">8/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S9 — EDA
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s9">
+  <div class="hdr"><h1>ANÁLISE EXPLORATÓRIA</h1><div class="sub">Crescimento do UFC &amp; correlação de features</div></div>
+  <div class="body" style="padding-top:8px;display:grid;grid-template-columns:1fr 1.4fr;gap:16px;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <img src="eda_lutas_por_ano-1.png" style="width:100%;border:1px solid #333;display:block;">
+      <div style="font-size:11px;color:var(--gold);font-style:italic;text-align:center;">Lutas do UFC por ano (1993–2024)</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+        <div style="background:var(--dgray);border-left:3px solid var(--red);padding:7px 10px;font-size:12px;color:var(--lgray);">📈 Volume cresceu após 2008 — <strong style="color:var(--white);">justifica o recorte temporal</strong></div>
+        <div style="background:var(--dgray);border-left:3px solid var(--red);padding:7px 10px;font-size:12px;color:var(--lgray);">🎯 Baixo sinal individual confirma o <strong style="color:var(--white);">baixo teto de previsibilidade</strong></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <img src="eda_winrate_vs_feature-1.png" style="width:100%;border:1px solid #333;display:block;">
+      <div style="font-size:11px;color:var(--gold);font-style:italic;text-align:center;">Win-rate vs features diferenciais (quantis)</div>
+      <div style="background:var(--dgray);border-left:3px solid var(--red);padding:7px 10px;font-size:12px;color:var(--lgray);">⚡ Lutadores mais jovens, com mais vitórias e maior envergadura tendem a vencer — <strong style="color:var(--white);">efeitos moderados</strong></div>
+    </div>
+  </div>
+  <div class="pg">9/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S10 — VALIDAÇÃO CRUZADA
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s10">
+  <div class="hdr"><h1>SELEÇÃO DE MODELOS</h1><div class="sub">AUC-ROC na validação cruzada 5-fold — conjunto de treino</div></div>
+  <div class="body" style="padding-top:12px;">
+    <div style="max-width:820px;margin:0 auto 18px;">
+      <div class="bar-row" style="margin-bottom:4px;">
+        <div class="bar-lbl" style="color:#444;font-size:11px;">Modelo</div>
+        <div style="flex:1;display:flex;justify-content:space-between;font-size:11px;color:#444;padding:0 2px;"><span>0,60</span><span>0,61</span><span>0,62</span><span>0,63</span><span>0,64</span></div>
+        <div style="width:64px;font-size:11px;color:#444;text-align:right;">AUC-ROC</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-lbl" style="color:var(--gold);font-weight:700;">Regressão Logística</div>
+        <div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--red);"></div></div>
+        <div class="bar-val" style="color:var(--gold);width:64px;text-align:right;">0,634</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-lbl">XGBoost</div>
+        <div class="bar-track"><div class="bar-fill" style="width:70%;background:var(--mgray);"></div></div>
+        <div class="bar-val" style="width:64px;text-align:right;">0,628</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-lbl">Random Forest</div>
+        <div class="bar-track"><div class="bar-fill" style="width:57%;background:var(--mgray);"></div></div>
+        <div class="bar-val" style="width:64px;text-align:right;">0,623</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-lbl">SVM (RBF)</div>
+        <div class="bar-track"><div class="bar-fill" style="width:45%;background:var(--mgray);"></div></div>
+        <div class="bar-val" style="width:64px;text-align:right;">0,618</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-lbl">Rede Neural (MLP)</div>
+        <div class="bar-track"><div class="bar-fill" style="width:42%;background:var(--mgray);"></div></div>
+        <div class="bar-val" style="width:64px;text-align:right;">0,617</div>
+      </div>
+    </div>
+    <div style="background:var(--dgray);border-left:4px solid var(--gold);padding:12px 16px;font-size:13px;color:var(--lgray);">
+      Modelos ficaram próximos (AUC 0,617–0,634) → relação <strong style="color:var(--white);">predominantemente aditiva/linear</strong> após representação diferencial.
+      Ganhos virão de <strong style="color:var(--white);">melhores atributos</strong>, não de modelos mais complexos.
+    </div>
+  </div>
+  <div class="pg">10/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S11 — RESULTADOS TABELA
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s11">
+  <div class="hdr"><h1>RESULTADOS — CONJUNTO DE TESTE</h1><div class="sub">Lutas 2022–2024 · 1.401 lutas · divisão temporal estrita</div></div>
+  <div class="body" style="padding-top:8px;">
+    <table class="res">
+      <thead><tr>
+        <th>Modelo</th><th>Acurácia</th><th>Precisão</th><th>Revocação</th><th>F1</th><th>AUC-ROC</th><th>Log-loss</th>
+      </tr></thead>
+      <tbody>
+        <tr class="bl"><td>Baseline (classe majoritária)</td><td>0,492</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr class="bl"><td>Baseline (melhor cartel)</td><td>0,489</td><td>0,497</td><td>0,414</td><td>0,452</td><td>0,481</td><td>0,860</td></tr>
+        <tr><td>Regressão Logística</td><td>0,612</td><td>0,624</td><td>0,597</td><td>0,610</td><td>0,665</td><td><span class="star">0,653 ★</span></td></tr>
+        <tr class="best"><td>🥇 Random Forest</td><td><span class="star">0,625 ★</span></td><td><span class="star">0,636 ★</span></td><td>0,612</td><td>0,624</td><td><span class="star">0,675 ★</span></td><td>0,659</td></tr>
+        <tr><td>XGBoost</td><td>0,622</td><td>0,629</td><td><span class="star">0,622 ★</span></td><td><span class="star">0,626 ★</span></td><td>0,663</td><td>0,654</td></tr>
+        <tr><td>SVM (RBF)</td><td>0,606</td><td>0,615</td><td>0,600</td><td>0,607</td><td>0,644</td><td>0,663</td></tr>
+        <tr><td>Rede Neural (MLP)</td><td>0,619</td><td>0,633</td><td>0,596</td><td>0,614</td><td>0,661</td><td>0,659</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:12px;display:flex;gap:10px;">
+      <div class="bcard" style="flex:1;font-size:12px;"><span style="color:var(--lgray);">★ = melhor valor da coluna</span></div>
+      <div class="bcard gold" style="flex:2;font-size:12px;"><span style="color:var(--lgray);">Baseline "melhor cartel" ficou <strong style="color:var(--red);">ABAIXO do acaso</strong> (AUC 0,481) — cartel isolado não é informativo nas lutas recentes</span></div>
+    </div>
+  </div>
+  <div class="pg">11/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S12 — ROC & CONFUSÃO
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s12">
+  <div class="hdr"><h1>CURVAS ROC &amp; MATRIZES DE CONFUSÃO</h1><div class="sub">Conjunto de teste temporal</div></div>
+  <div class="body" style="padding-top:8px;display:grid;grid-template-columns:1fr 1.5fr;gap:16px;">
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <img src="roc-1.png" style="width:100%;border:1px solid #333;">
+      <div style="font-size:11px;color:var(--gold);font-style:italic;text-align:center;">Curvas ROC — todos acima da diagonal</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <img src="confusao-1.png" style="width:100%;border:1px solid #333;">
+      <div style="font-size:11px;color:var(--gold);font-style:italic;text-align:center;">Matrizes de confusão equilibradas (efeito do espelhamento)</div>
+    </div>
+    <div style="grid-column:1/-1;">
+      <div class="hb">Baseline "melhor cartel" ficou ABAIXO do acaso (AUC 0,481) — combinar vários sinais fracos vale 62%+</div>
+    </div>
+  </div>
+  <div class="pg">12/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S13 — IMPORTÂNCIA
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s13">
+  <div class="hdr"><h1>IMPORTÂNCIA DOS ATRIBUTOS &amp; CALIBRAÇÃO</h1><div class="sub">Quais features mais influenciam o resultado?</div></div>
+  <div class="body" style="padding-top:8px;display:grid;grid-template-columns:1.6fr 1fr;gap:16px;">
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <img src="importancia-1.png" style="width:100%;border:1px solid #333;">
+      <div style="font-size:11px;color:var(--gold);font-style:italic;text-align:center;">Coeficientes Reg. Logística (esq.) e importância por permutação em AUC (dir.)</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <div class="ins"><div class="ico">🥇</div><div class="txt"><strong style="color:var(--gold);">Diferença de IDADE</strong> — fator mais determinante (mais velho → perde mais)</div></div>
+      <div class="ins"><div class="ico">🥊</div><div class="txt"><strong style="color:var(--gold);">Golpes absorvidos</strong> — menor defesa = menor chance de vitória</div></div>
+      <div class="ins"><div class="ico">🎯</div><div class="txt"><strong style="color:var(--gold);">Precisão de golpes</strong> — stat intra-octógono mais informativa</div></div>
+      <div class="ins"><div class="ico">📈</div><div class="txt"><strong style="color:var(--gold);">Win-rate 5 anos</strong> — forma recente importa</div></div>
+      <div class="ins"><div class="ico">📉</div><div class="txt">Taxas de finalização e estilo de luta → <strong style="color:var(--white);">efeito marginal</strong></div></div>
+      <div style="margin-top:6px;">
+        <img src="calibracao-1.png" style="width:100%;border:1px solid #333;">
+        <div style="font-size:10px;color:var(--lgray);font-style:italic;text-align:center;margin-top:3px;">Calibração — probs razoáveis, conservadoras nos extremos</div>
+      </div>
+    </div>
+  </div>
+  <div class="pg">13/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S14 — DISCUSSÃO
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s14">
+  <div class="hdr"><h1>DISCUSSÃO</h1><div class="sub">Interpretando os resultados</div></div>
+  <div class="body" style="padding-top:8px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div style="background:var(--dgray);border-top:3px solid var(--red);padding:14px;">
+        <div style="font-size:12px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">O que funcionou</div>
+        <ul class="bul" style="font-size:13px;">
+          <li><div class="dot"></div><div>Stats intra-octógono elevaram desempenho acima da literatura</div></li>
+          <li><div class="dot"></div><div>Forma recente (win-rate 2/5 anos) captura tendências recentes</div></li>
+          <li><div class="dot"></div><div>Espelhamento: classes balanceadas, sem viés de apresentação</div></li>
+          <li><div class="dot"></div><div>Divisão temporal: avaliação honesta e realista</div></li>
+        </ul>
+      </div>
+      <div style="background:var(--dgray);border-top:3px solid var(--gold);padding:14px;">
+        <div style="font-size:12px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Limitações</div>
+        <ul class="bul" style="font-size:13px;">
+          <li><div class="dot"></div><div>Modelos lineares e não-lineares ficaram próximos — ganho virá de melhores atributos</div></li>
+          <li><div class="dot"></div><div>Testado em lutadores possivelmente não vistos no treino</div></li>
+          <li><div class="dot"></div><div>Não captura: mudanças de categoria, layoff, odds de apostas</div></li>
+        </ul>
+      </div>
+    </div>
+    <div class="fbox" style="font-size:16px;">
+      62,5% de acurácia e AUC-ROC 0,675 — no <strong>teto superior realista do MMA</strong> reportado na literatura (~60–65%)
+    </div>
+  </div>
+  <div class="pg">14/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S15 — WEBAPP ARQUITETURA
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s15">
+  <div class="hdr"><h1>APLICAÇÃO WEB</h1><div class="sub">MuchaLutcha MatchMaker — arquitetura e funcionalidades</div></div>
+  <div class="body" style="padding-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div>
+      <div style="font-size:12px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Back-end · Flask (Python)</div>
+      <ul class="bul" style="font-size:12px;margin-bottom:12px;">
+        <li><div class="dot"></div><div>Carrega 5 modelos <code>.joblib</code> ao iniciar</div></li>
+        <li><div class="dot"></div><div><code>/api/rankings</code> — scraping ao vivo do ufc.com (cache 10 min)</div></li>
+        <li><div class="dot"></div><div><code>/api/fighter/&lt;nome&gt;</code> — stats pré-luta com busca tolerante a nomes</div></li>
+        <li><div class="dot"></div><div><code>/api/predict</code> — prob. de cada modelo + ensemble</div></li>
+        <li><div class="dot"></div><div>Reutiliza o <strong>mesmo pipeline de atributos</strong> do treino</div></li>
+      </ul>
+      <div style="font-size:12px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Funcionalidades</div>
+      <ul class="bul" style="font-size:12px;">
+        <li><div class="dot"></div><div>Seleção por ranking oficial (categoria de peso)</div></li>
+        <li><div class="dot"></div><div>Modo livre — qualquer confronto entre atletas</div></li>
+        <li><div class="dot"></div><div>Lutador customizado com stats definidas pelo usuário</div></li>
+        <li><div class="dot"></div><div>Seletor de luta de título (3 ou 5 rounds) → ajusta durabilidade</div></li>
+      </ul>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <img src="screenshot-tale-of-tape.png" style="width:100%;border:1px solid #444;border-radius:2px;">
+      <div style="font-size:11px;color:var(--gold);font-style:italic;text-align:center;">Tale of the Tape — comparativo de atributos</div>
+    </div>
+  </div>
+  <div class="pg">15/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S16 — WEBAPP RESULTADO
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s16">
+  <div class="hdr"><h1>APLICAÇÃO WEB — RESULTADO</h1><div class="sub">Previsão ensemble + detalhamento por modelo</div></div>
+  <div class="body" style="padding-top:8px;display:flex;flex-direction:column;gap:8px;">
+    <img src="screenshot-result.png" style="width:100%;max-height:530px;object-fit:contain;border:1px solid #444;border-radius:2px;display:block;">
+    <div style="text-align:center;font-size:12px;color:var(--gold);font-style:italic;">
+      Probabilidade do ensemble (média dos 5 modelos) + breakdown por modelo
+    </div>
+  </div>
+  <div class="pg">16/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S17 — PREVISÕES vs RESULTADO REAL
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s17">
+  <div class="hdr"><h1>PREVISÕES vs RESULTADO REAL</h1><div class="sub">UFC 317 · Dom. 14 Jun. 2026 — 4 lutas previstas, 4 acertos</div></div>
+  <div class="body" style="padding-top:6px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;">
+    <!-- Topuria vs Gaethje -->
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Peso Leve · Luta principal</div>
+      <img src="pred-topuria-gaethje.png" style="width:100%;border:1px solid #333;border-radius:2px;flex:1;min-height:0;object-fit:cover;object-position:center top;">
+      <div style="font-size:10px;color:#aaa;display:flex;align-items:center;gap:6px;">
+        <span style="color:var(--gold);font-weight:700;">Previsto: Topuria 75%</span>
+        <span style="color:#555;">·</span>
+        <span style="color:#4caf50;font-weight:700;">✓ Topuria venceu (KO/TKO R4)</span>
+      </div>
+    </div>
+    <!-- Gane vs Pereira -->
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Peso Pesado · Coevento principal</div>
+      <img src="pred-gane-pereira.png" style="width:100%;border:1px solid #333;border-radius:2px;flex:1;min-height:0;object-fit:cover;object-position:center top;">
+      <div style="font-size:10px;color:#aaa;display:flex;align-items:center;gap:6px;">
+        <span style="color:var(--gold);font-weight:700;">Previsto: Gane 79%</span>
+        <span style="color:#555;">·</span>
+        <span style="color:#4caf50;font-weight:700;">✓ Gane venceu (KO/TKO R2)</span>
+      </div>
+    </div>
+    <!-- O'Malley vs Zahabi -->
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Peso Galo</div>
+      <img src="pred-omalley-zahabi.png" style="width:100%;border:1px solid #333;border-radius:2px;flex:1;min-height:0;object-fit:cover;object-position:center top;">
+      <div style="font-size:10px;color:#aaa;display:flex;align-items:center;gap:6px;">
+        <span style="color:var(--gold);font-weight:700;">Previsto: O'Malley 80%</span>
+        <span style="color:#555;">·</span>
+        <span style="color:#4caf50;font-weight:700;">✓ O'Malley venceu (KO/TKO R2)</span>
+      </div>
+    </div>
+    <!-- Hokit vs Lewis -->
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Peso Pesado</div>
+      <img src="pred-hokit-lewis.png" style="width:100%;border:1px solid #333;border-radius:2px;flex:1;min-height:0;object-fit:cover;object-position:center top;">
+      <div style="font-size:10px;color:#aaa;display:flex;align-items:center;gap:6px;">
+        <span style="color:var(--gold);font-weight:700;">Previsto: Hokit 77%</span>
+        <span style="color:#555;">·</span>
+        <span style="color:#4caf50;font-weight:700;">✓ Hokit venceu (KO/TKO R2)</span>
+      </div>
+    </div>
+  </div>
+  <div class="pg">17/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S18 — CONCLUSÃO
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s17">
+  <div class="hdr"><h1>CONCLUSÃO &amp; TRABALHOS FUTUROS</h1></div>
+  <div class="body" style="padding-top:8px;">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+      <div class="stat-box"><div class="n">62,5%</div><div class="d">Acurácia<br>(Random Forest)</div></div>
+      <div class="stat-box"><div class="n">0,675</div><div class="d">AUC-ROC<br>(Random Forest)</div></div>
+      <div class="stat-box"><div class="n">23</div><div class="d">Atributos<br>diferenciais</div></div>
+      <div class="stat-box"><div class="n">5</div><div class="d">Modelos<br>comparados</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Trabalhos Futuros</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="bcard gold"><div class="btext"><span style="color:var(--gold);font-weight:700;">i)</span> Incorporar <strong style="color:var(--white);">odds das casas de apostas</strong> como atributo e baseline forte</div></div>
+      <div class="bcard gold"><div class="btext"><span style="color:var(--gold);font-weight:700;">ii)</span> Modelar <strong style="color:var(--white);">sequências de resultados</strong> e layoff entre lutas</div></div>
+      <div class="bcard gold"><div class="btext"><span style="color:var(--gold);font-weight:700;">iii)</span> Tratar <strong style="color:var(--white);">mudanças de categoria de peso</strong> e cortes de peso</div></div>
+      <div class="bcard gold"><div class="btext"><span style="color:var(--gold);font-weight:700;">iv)</span> Explorar modelos longitudinais: <strong style="color:var(--white);">LSTM, gradient boosting temporal</strong></div></div>
+    </div>
+  </div>
+  <div class="pg">18/19</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  S19 — CONTRIBUIÇÕES + OBRIGADO
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s18">
+  <!-- fundo igual à capa -->
+  <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a0000 0%,#0a0a0a 55%,#0a0a0a 100%);"></div>
+  <div style="position:absolute;top:0;right:0;width:340px;height:100%;background:var(--red);clip-path:polygon(18% 0,100% 0,100% 100%,0 100%);opacity:0.12;"></div>
+  <div style="position:absolute;top:0;left:0;right:0;height:8px;background:var(--red);"></div>
+  <div style="position:absolute;top:8px;left:0;right:0;height:2px;background:var(--gold);"></div>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:8px;background:var(--red);"></div>
+
+  <div style="position:absolute;top:18px;left:24px;right:24px;bottom:18px;display:flex;flex-direction:column;justify-content:center;gap:16px;">
+    <!-- membros -->
+    <div style="display:flex;gap:12px;">
+      <div class="mc">
+        <div class="mch">ENZO<br>LOZANO</div>
+        <div class="mcb"><ul>
+          <li>Coleta e preparação dos dados</li>
+          <li>Limpeza e junção das tabelas</li>
+          <li>Tratamento de valores ausentes</li>
+          <li>Análise exploratória (EDA)</li>
+        </ul></div>
+      </div>
+      <div class="mc">
+        <div class="mch">ALAN<br>CARNEIRO</div>
+        <div class="mcb"><ul>
+          <li>Representação diferencial base</li>
+          <li>Espelhamento e divisão temporal</li>
+          <li>Implementação dos 5 modelos</li>
+          <li>Ajuste de hiperparâmetros</li>
+        </ul></div>
+      </div>
+      <div class="mc">
+        <div class="mch">MARCELO<br>MARQUES</div>
+        <div class="mcb"><ul>
+          <li>Novos atributos (stats intra-octógono)</li>
+          <li>Forma recente e proxies durabilidade</li>
+          <li>Avaliação, figuras e tabelas</li>
+          <li>Análise de resultados &amp; artigo</li>
+        </ul></div>
+      </div>
+    </div>
+    <!-- obrigado -->
+    <div style="text-align:center;">
+      <div class="ufc-font" style="font-size:80px;color:var(--white);text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000;line-height:1;">OBRIGADO!</div>
+      <div style="width:320px;height:2px;background:var(--gold);margin:10px auto;"></div>
+      <div style="font-family:Arial,sans-serif;font-size:14px;color:var(--lgray);">
+        Random Forest → <strong style="color:var(--white);">62,5% acurácia</strong> &nbsp;|&nbsp; <strong style="color:var(--white);">AUC-ROC 0,675</strong>
+      </div>
+    </div>
+  </div>
+  <div class="pg">19/19</div>
+</div>
+
+</body>
+</html>
